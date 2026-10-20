@@ -2,7 +2,6 @@ import { STAGES } from '../constants.js';
 
 /**
  * A single vibecoding task — the locked data model from PRD §5.
- * (The M9 context fields are added in that milestone.)
  *
  * @typedef {Object} Task
  * @property {string} id
@@ -13,6 +12,9 @@ import { STAGES } from '../constants.js';
  * @property {string} assignee          one of TEAM
  * @property {string|null} dueDate      ISO 'YYYY-MM-DD'
  * @property {string} createdDate       ISO 'YYYY-MM-DD'
+ * @property {string} context           M9: Markdown briefing for the next AI / teammate
+ * @property {string|null} contextTool  M9: one of AI_TOOLS, or null
+ * @property {string|null} contextUpdatedAt  M9: ISO timestamp, set automatically on save
  */
 
 /** Today's date as ISO 'YYYY-MM-DD' (local time). */
@@ -44,6 +46,9 @@ export function createTask(fields = {}) {
     assignee: '',
     dueDate: null,
     createdDate: todayISO(),
+    context: '',
+    contextTool: null,
+    contextUpdatedAt: null,
     ...fields,
   };
   if (!STAGES.some((s) => s.id === task.status)) {
@@ -53,4 +58,15 @@ export function createTask(fields = {}) {
     throw new Error(`Unknown type "${task.type}"`);
   }
   return task;
+}
+
+/**
+ * Fills in fields that tasks saved before M9 don't have yet, so older
+ * localStorage data keeps working without being wiped.
+ *
+ * @param {Partial<Task>} task
+ * @returns {Task}
+ */
+export function withTaskDefaults(task) {
+  return { context: '', contextTool: null, contextUpdatedAt: null, ...task };
 }

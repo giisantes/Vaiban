@@ -90,8 +90,10 @@ Three lines of microcopy that capture the tone of the product. Keep it short —
 | "+" button label | + Task |
 | Empty column placeholder | Nothing here yet. |
 | Toast after "Copy as Prompt Context" | Context copied. Paste it into your AI tool. |
-| Confirm-delete message | Delete this task? This can't be undone. |
+| Confirm-delete message | Delete this task? You can undo it straight after. |
 | Handoff toast (M7 `task-owner`) | Handed "{task}" to {name}. |
+| Move toast (M12 `secret-sauce`) | Moved "{task}" to {column}. — with an **Undo** button |
+| After undo (M12) | Undid {what was changed}. |
 
 ## 6. Logo / wordmark
 

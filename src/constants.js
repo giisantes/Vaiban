@@ -23,3 +23,33 @@ export const TEAM = ['Teammate A', 'Teammate B', 'Teammate C'];
 
 /** localStorage key for the task list. */
 export const TASKS_STORAGE_KEY = 'vibetracker.tasks';
+
+/** Options for `Task.contextTool` (PRD §5, M9). */
+export const AI_TOOLS = ['Claude', 'Gemini', 'ChatGPT', 'Cursor', 'Lovable', 'Replit', 'Other'];
+
+/**
+ * Starting text for a new task's Context field (M9). Headings give the
+ * writer a structure to fill in; empty ones are left out when copied (M10).
+ */
+export const CONTEXT_TEMPLATE = `## Background
+
+
+## Constraints
+
+
+## Tried so far
+
+
+## Pick up from here
+`;
+
+/** The four pinned deliverable slots on the Anchor Board (PRD §5, M11). */
+export const ANCHORS = [
+  { id: 'presentation',  label: 'Presentation' },
+  { id: 'demo',          label: 'Demo' },
+  { id: 'report',        label: 'Report' },
+  { id: 'documentation', label: 'Documentation' },
+];
+
+/** localStorage key for the Anchor Board. */
+export const ANCHORS_STORAGE_KEY = 'vibetracker.anchors';

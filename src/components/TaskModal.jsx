@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { STAGES, TEAM, TASK_TYPES } from '../constants.js';
 import { typeStyle } from '../lib/typeStyles.js';
+import ContextSection from './ContextSection.jsx';
+import CopyContextButton from './CopyContextButton.jsx';
+import TaskDetails from './TaskDetails.jsx';
 import TypeBadge, { TypeIcon } from './TypeBadge.jsx';
 
 const inputClass =
   'w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 ' +
-  'focus:outline-none focus:ring-2 focus:ring-[#23466E]';
+  'focus:outline-none focus:ring-2 focus:ring-brand-primary';
 const labelClass = 'grid gap-1 text-sm font-medium text-slate-700';
 
 /** Formats an ISO date ('YYYY-MM-DD') for display, e.g. "20 Oct 2026". */
@@ -20,9 +23,19 @@ function formatDate(iso) {
  * keyboard focus stays inside it and Escape closes it (DESIGN.md §4).
  *
  * The same modal is used for a new task and for editing an existing one.
- * Status is changed with a dropdown here – no drag-and-drop yet (M5 brief).
+ * Status is changed with a dropdown here. Since M12 cards can also be
+ * dragged, but this dropdown stays as the keyboard and single-click way.
  * M6: the modal's top edge, the heading badge and the type picker all use
  * the same type colours as the cards, and update as soon as the type changes.
+ * M9: a Context section (see ContextSection.jsx). `contextUpdatedAt` is set
+ * automatically on save, but only when the context or AI tool changed.
+ * M10: "Copy Context" in the Context section copies what is in the form now,
+ * including unsaved edits.
+ *
+ * View first, edit on request: clicking a card opens a read-only view
+ * (TaskDetails). Only the "Edit task" button switches to the form, and
+ * "Cancel" goes back to the view without saving. New tasks open straight
+ * in the form.
  *
  * @param {{
  *   task: import('../lib/createTask.js').Task | null,  // null = closed
@@ -30,24 +43,44 @@ function formatDate(iso) {
  *   onSave: (task: import('../lib/createTask.js').Task) => void,
  *   onDelete: (id: string) => void,
  *   onClose: () => void,
+ *   today: string,
  * }} props
  */
-export default function TaskModal({ task, isNew, onSave, onDelete, onClose }) {
+export default function TaskModal({ task, isNew, onSave, onDelete, onClose, today }) {
   const dialogRef = useRef(null);
   const [form, setForm] = useState(task);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [mode, setMode] = useState('view'); // 'view' | 'edit'
 
   // Load the task into the form each time the modal opens with a task.
-  useEffect(() => {
+  // Existing tasks open in view mode; new ones go straight to the form.
+  // (Done during render, not in an effect, so the old mode never flashes up.)
+  const [shownTask, setShownTask] = useState(task);
+  if (task !== shownTask) {
+    setShownTask(task);
     setForm(task);
     setConfirmingDelete(false);
-  }, [task]);
+    setMode(isNew ? 'edit' : 'view');
+  }
+
+  /** Leave the form without saving: back to the view (or close, for a new task). */
+  const cancelEdit = () => {
+    if (isNew) return onClose();
+    setForm(task);
+    setConfirmingDelete(false);
+    setMode('view');
+  };
 
   // Open / close the native dialog to match the `task` prop.
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-    if (task && !dialog.open) dialog.showModal();
+    if (task && !dialog.open) {
+      dialog.showModal();
+      // The browser focuses the first button (Close); move focus to the main
+      // starting point instead – the Edit button, or the title field.
+      dialog.querySelector('[data-autofocus]')?.focus();
+    }
     if (!task && dialog.open) dialog.close();
   }, [task]);
 
@@ -57,7 +90,13 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose }) {
     e.preventDefault();
     const title = form.title.trim();
     if (!title) return;
-    onSave({ ...form, title, dueDate: form.dueDate || null });
+    const contextChanged = form.context !== task.context || form.contextTool !== task.contextTool;
+    onSave({
+      ...form,
+      title,
+      dueDate: form.dueDate || null,
+      contextUpdatedAt: contextChanged ? new Date().toISOString() : form.contextUpdatedAt,
+    });
   };
 
   return (
@@ -68,9 +107,12 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose }) {
         e.preventDefault(); // let React state close it, so the two never disagree
         onClose();
       }}
-      className={`w-[min(640px,calc(100vw-32px))] rounded-lg border border-t-4 border-slate-200 p-0 text-slate-900 shadow-xl backdrop:bg-slate-900/50 ${form ? typeStyle(form.type).topEdge : ''}`}
+      className={`max-h-[calc(100vh-32px)] w-[min(680px,calc(100vw-32px))] overflow-y-auto rounded-lg border border-t-4 border-slate-200 p-0 text-slate-900 shadow-xl backdrop:bg-slate-900/50 ${form ? typeStyle(form.type).topEdge : ''}`}
     >
-      {form && (
+      {form && mode === 'view' && (
+        <TaskDetails task={task} today={today} onEdit={() => setMode('edit')} onClose={onClose} />
+      )}
+      {form && mode === 'edit' && (
         <form onSubmit={handleSubmit} className="grid gap-4 p-5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -90,7 +132,7 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose }) {
 
           <label className={labelClass}>
             <span>Title (required)</span>
-            <input id="task-title" type="text" value={form.title} onChange={set('title')} required autoFocus className={inputClass} />
+            <input id="task-title" type="text" value={form.title} onChange={set('title')} required autoFocus data-autofocus className={inputClass} />
           </label>
 
           <div className="grid grid-cols-2 gap-3">
@@ -102,7 +144,7 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose }) {
                   return (
                     <label
                       key={t.id}
-                      className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-sm font-medium focus-within:ring-2 focus-within:ring-[#23466E] ${
+                      className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-sm font-medium focus-within:ring-2 focus-within:ring-brand-primary ${
                         checked ? typeStyle(t.id).selected : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
                       }`}
                     >
@@ -149,8 +191,18 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose }) {
 
           <label className={labelClass}>
             <span>Description</span>
-            <textarea id="task-description" value={form.description} onChange={set('description')} rows={4} className={inputClass} />
+            <textarea id="task-description" value={form.description} onChange={set('description')} rows={3} className={inputClass} />
           </label>
+
+          <ContextSection
+            context={form.context}
+            contextTool={form.contextTool}
+            contextUpdatedAt={form.contextUpdatedAt}
+            onChange={(field, value) => setForm({ ...form, [field]: value })}
+            inputClass={inputClass}
+          >
+            <CopyContextButton task={form} className="py-1.5 text-sm" />
+          </ContextSection>
 
           {!isNew && <p className="text-xs text-slate-600">Created {formatDate(form.createdDate)}</p>}
 
@@ -167,7 +219,7 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose }) {
               )}
               {confirmingDelete && (
                 <div role="alert" className="flex flex-wrap items-center gap-2 text-sm">
-                  <span>Delete this task? This can't be undone.</span>
+                  <span>Delete this task? You can undo it straight after.</span>
                   <button
                     type="button"
                     onClick={() => onDelete(form.id)}
@@ -186,9 +238,18 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose }) {
               )}
             </div>
 
-            <button type="submit" className="rounded-md bg-[#23466E] px-4 py-1.5 text-sm font-medium text-white hover:brightness-110">
-              {isNew ? 'Create task' : 'Save changes'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={cancelEdit}
+                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              <button type="submit" className="rounded-md bg-brand-primary px-4 py-1.5 text-sm font-medium text-white hover:brightness-110">
+                {isNew ? 'Create task' : 'Save changes'}
+              </button>
+            </div>
           </div>
         </form>
       )}

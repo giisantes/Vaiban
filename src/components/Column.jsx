@@ -3,9 +3,13 @@ import TaskCard from './TaskCard.jsx';
 /**
  * One board column: a heading, a task count and its cards.
  *
- * @param {{ stage: {id: string, label: string}, tasks: import('../lib/createTask.js').Task[] }} props
+ * @param {{
+ *   stage: {id: string, label: string},
+ *   tasks: import('../lib/createTask.js').Task[],
+ *   onOpenTask: (id: string) => void,
+ * }} props
  */
-export default function Column({ stage, tasks }) {
+export default function Column({ stage, tasks, onOpenTask }) {
   const headingId = `column-${stage.id}`;
 
   return (
@@ -27,7 +31,7 @@ export default function Column({ stage, tasks }) {
         <ul className="flex flex-col gap-2">
           {tasks.map((task) => (
             <li key={task.id}>
-              <TaskCard task={task} />
+              <TaskCard task={task} onOpen={onOpenTask} />
             </li>
           ))}
         </ul>

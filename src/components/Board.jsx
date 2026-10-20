@@ -5,9 +5,9 @@ import Column from './Column.jsx';
  * The Kanban board: one column per stage, each showing the tasks whose
  * status matches the column id.
  *
- * @param {{ tasks: import('../lib/createTask.js').Task[] }} props
+ * @param {{ tasks: import('../lib/createTask.js').Task[], onOpenTask: (id: string) => void }} props
  */
-export default function Board({ tasks }) {
+export default function Board({ tasks, onOpenTask }) {
   return (
     <main className="grid grid-cols-4 gap-4">
       {STAGES.map((stage) => (
@@ -15,6 +15,7 @@ export default function Board({ tasks }) {
           key={stage.id}
           stage={stage}
           tasks={tasks.filter((task) => task.status === stage.id)}
+          onOpenTask={onOpenTask}
         />
       ))}
     </main>

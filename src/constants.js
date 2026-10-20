@@ -9,6 +9,12 @@ export const STAGES = [
   { id: 'done',        label: 'Done' },
 ];
 
+/** Allowed values for `Task.type` (PRD §5), with display labels. */
+export const TASK_TYPES = [
+  { id: 'feature', label: 'Feature' },
+  { id: 'bug',     label: 'Bug' },
+];
+
 /**
  * Allowed values for `Task.assignee` (PRD §8).
  * Replace these placeholders with the names from PRD §8.

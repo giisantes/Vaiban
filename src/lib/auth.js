@@ -26,7 +26,7 @@ export function friendlyError(error) {
   if (msg.includes('rate limit') || msg.includes('too many')) return 'Too many attempts or emails sent. Wait a few minutes and try again.';
   if (msg.includes('sending') && msg.includes('email')) return "Couldn't send the confirmation email. (Site owner: check the email settings in Supabase → Authentication.)";
   if (msg.includes('signups not allowed') || msg.includes('signup is disabled')) return 'New sign-ups are switched off at the moment.';
-  if (msg.includes('invalid path') || msg.includes('invalid api key') || msg.includes('no api key')) return 'The app is not connected to its database correctly. (Site owner: check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.)';
+  if (msg.includes('invalid path') || msg.includes('api key') || msg.includes('apikey')) return `The app is not connected to its database correctly (${raw}). Site owner: check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY on Vercel, then redeploy.`;
   if (msg.includes('email') && msg.includes('invalid')) return "That email address wasn't accepted. Check it for typos.";
   if (msg.includes('password')) return raw;
   if (msg.includes('fetch') || msg.includes('network')) return "Can't reach the server. Check your internet connection.";

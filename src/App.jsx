@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useAuth } from './hooks/useAuth.js';
 import { signOut } from './lib/auth.js';
 import { cloudStore, localStore } from './lib/storage.js';
-import { supabase } from './lib/supabase.js';
+import { configError, supabase } from './lib/supabase.js';
 import AuthScreen from './components/AuthScreen.jsx';
 import FullPageMessage from './components/FullPageMessage.jsx';
 import Workspace from './components/Workspace.jsx';
@@ -24,6 +24,14 @@ export default function App() {
   const userId = auth.user?.id;
   const store = useMemo(() => (userId ? cloudStore(userId) : localStore), [userId]);
 
+  if (configError) {
+    return (
+      <FullPageMessage>
+        <p className="font-semibold text-due-overdue">Accounts are set up incorrectly.</p>
+        <p className="mt-2">{configError}</p>
+      </FullPageMessage>
+    );
+  }
   if (!supabase) return <Workspace store={localStore} user={null} />;
   if (auth.session === undefined) return <FullPageMessage>Loading…</FullPageMessage>;
   if (auth.recovering) {

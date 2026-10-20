@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ANCHORS_STORAGE_KEY, CONTEXT_TEMPLATE, STAGES, TASKS_STORAGE_KEY } from './constants.js';
+import { CONTEXT_TEMPLATE, PROJECTS_STORAGE_KEY, STAGES, TASKS_STORAGE_KEY } from './constants.js';
+import { useHashRoute } from './hooks/useHashRoute.js';
 import { useLocalStorage } from './hooks/useLocalStorage.js';
 import { useToday } from './hooks/useToday.js';
 import { useUndo } from './hooks/useUndo.js';
-import { defaultAnchors } from './lib/anchors.js';
 import { createTask, withTaskDefaults } from './lib/createTask.js';
+import { createProject, seedProjects } from './lib/projects.js';
 import { seedTasks } from './data/seedTasks.js';
 import AnchorBoard from './components/AnchorBoard.jsx';
+import AppHeader from './components/AppHeader.jsx';
 import Board from './components/Board.jsx';
+import ProjectsHome from './components/ProjectsHome.jsx';
 import TaskModal from './components/TaskModal.jsx';
 import Toast from './components/Toast.jsx';
 
@@ -25,14 +28,24 @@ import Toast from './components/Toast.jsx';
  *   lib/contextPrompt.js      task → Markdown briefing for AI tools (M10)
  *   lib/clipboard.js          copy to clipboard with a fallback (M10)
  *   lib/anchors.js            Anchor model + link tidying (M11)
+ *   lib/projects.js           Project model + createProject() factory (home page)
+ *   hooks/useHashRoute.js     #/ = home, #/project/<id> = that project's board
  *   data/seedTasks.js         mock tasks for first load
  *   components/               Board → Column → TaskCard, TaskModal, Toast, …
+ *
+ * Home page (after M12): a list of projects, each with its own board and
+ * its own deliverable links. Tasks belong to a project via `projectId`.
  *
  * M12 secret-sauce: drag cards between columns, and undo any board change
  * (the toast's Undo button, or Ctrl/Cmd+Z). The status dropdown in the
  * task modal stays as the keyboard / single-click way to move a card.
  */
 export default function App() {
+  // Home page: which project is open (null = the projects list), kept in the URL hash.
+  const [projectId, navigate] = useHashRoute();
+  const [projects, setProjects] = useLocalStorage(PROJECTS_STORAGE_KEY, seedProjects());
+  const project = projects.find((p) => p.id === projectId) ?? null;
+
   // M4 data-model: tasks persist in localStorage; the mock tasks are only
   // used when nothing is stored yet (i.e. on first load).
   const [storedTasks, setTasks] = useLocalStorage(TASKS_STORAGE_KEY, seedTasks());
@@ -63,7 +76,7 @@ export default function App() {
   }, [highlightId]);
 
   // M9: new tasks start with the Context template (Background / Constraints / …).
-  const openNewTask = () => setEditing(createTask({ context: CONTEXT_TEMPLATE }));
+  const openNewTask = () => setEditing(createTask({ projectId: project.id, context: CONTEXT_TEMPLATE }));
   const openTask = (id) => setEditing(tasks.find((t) => t.id === id) ?? null);
   const closeModal = () => setEditing(null);
 
@@ -140,43 +153,45 @@ export default function App() {
   const contextCopied = (ok) =>
     setToast({ message: ok ? 'Context copied. Paste it into your AI tool.' : "Couldn't copy. Open the task and copy the Context text yourself." });
 
-  // M11 project-deliverables: the four pinned deliverable links.
-  const [anchors, setAnchors] = useLocalStorage(ANCHORS_STORAGE_KEY, defaultAnchors());
-  const saveAnchor = (id, url) =>
-    setAnchors((prev) => prev.map((a) => (a.id === id ? { ...a, url } : a)));
+  // M11 project-deliverables: each project has its own four deliverable links.
+  const saveAnchor = (anchorId, url) =>
+    setProjects((prev) =>
+      prev.map((p) => (p.id === project.id ? { ...p, anchors: p.anchors.map((a) => (a.id === anchorId ? { ...a, url } : a)) } : p))
+    );
+
+  // Home page: add a project, then go straight to its (empty) board.
+  const addProject = (fields) => {
+    const created = createProject(fields);
+    setProjects((prev) => [...prev, created]);
+    navigate(created.id);
+    setToast({ message: `Created "${created.name}". Add its first task with + Task.` });
+  };
+
+  // A link to a project that no longer exists falls back to the home page.
+  useEffect(() => {
+    if (projectId && !project) navigate(null);
+  }, [projectId, project, navigate]);
 
   return (
     <div className="min-h-screen p-6">
-      <header className="mb-4 flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">
-            Vibecoding Project Tracker
-          </h1>
-          <p className="text-sm text-slate-600">
-            {/* Replace this line with your team name from PRD §11. */}
-            Team starter
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={openNewTask}
-          className="rounded-md bg-brand-primary px-4 py-2 text-sm font-medium text-white hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
-        >
-          + Task
-        </button>
-      </header>
+      <AppHeader project={project} onHome={() => navigate(null)} onNewTask={openNewTask} />
 
-      <AnchorBoard anchors={anchors} onSave={saveAnchor} />
-
-      <Board
-        tasks={tasks}
-        onOpenTask={openTask}
-        onHandOff={handOff}
-        onMoveTask={moveTask}
-        highlightId={highlightId}
-        today={today}
-        onCopied={contextCopied}
-      />
+      {project ? (
+        <>
+          <AnchorBoard key={project.id} anchors={project.anchors} onSave={saveAnchor} />
+          <Board
+            tasks={tasks.filter((t) => t.projectId === project.id)}
+            onOpenTask={openTask}
+            onHandOff={handOff}
+            onMoveTask={moveTask}
+            highlightId={highlightId}
+            today={today}
+            onCopied={contextCopied}
+          />
+        </>
+      ) : (
+        <ProjectsHome projects={projects} tasks={tasks} today={today} onOpen={navigate} onCreate={addProject} />
+      )}
 
       <TaskModal task={editing} isNew={isNew} onSave={saveTask} onDelete={deleteTask} onClose={closeModal} today={today} />
       <Toast toast={toast} onDone={clearToast} />

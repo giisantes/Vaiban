@@ -25,7 +25,7 @@ export const TEAM = ['Teammate A', 'Teammate B', 'Teammate C'];
 export const TASKS_STORAGE_KEY = 'vibetracker.tasks';
 
 /** Options for `Task.contextTool` (PRD §5, M9). */
-export const AI_TOOLS = ['Claude', 'Gemini', 'ChatGPT', 'Cursor', 'Lovable', 'Replit', 'Other'];
+export const AI_TOOLS = ['Claude', 'ChatGPT', 'Cursor', 'Lovable', 'Replit', 'Other'];
 
 /**
  * Starting text for a new task's Context field (M9). Headings give the
@@ -53,3 +53,12 @@ export const ANCHORS = [
 
 /** localStorage key for the Anchor Board. */
 export const ANCHORS_STORAGE_KEY = 'vibetracker.anchors';
+
+/** localStorage key for the list of projects (home page). */
+export const PROJECTS_STORAGE_KEY = 'vibetracker.projects';
+
+/**
+ * Tasks saved before projects existed belong to this project, so nothing
+ * on an existing board goes missing.
+ */
+export const DEFAULT_PROJECT_ID = 'project-tracker';

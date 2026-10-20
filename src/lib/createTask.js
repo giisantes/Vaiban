@@ -1,10 +1,11 @@
-import { STAGES } from '../constants.js';
+import { DEFAULT_PROJECT_ID, STAGES } from '../constants.js';
 
 /**
  * A single vibecoding task — the locked data model from PRD §5.
  *
  * @typedef {Object} Task
  * @property {string} id
+ * @property {string} projectId       which project's board it is on (home page)
  * @property {string} title
  * @property {string} description
  * @property {'feature'|'bug'} type
@@ -39,6 +40,7 @@ function newId() {
 export function createTask(fields = {}) {
   const task = {
     id: newId(),
+    projectId: DEFAULT_PROJECT_ID,
     title: '',
     description: '',
     type: 'feature',
@@ -61,12 +63,13 @@ export function createTask(fields = {}) {
 }
 
 /**
- * Fills in fields that tasks saved before M9 don't have yet, so older
+ * Fills in fields that older saved tasks don't have yet (the M9 context
+ * fields, and `projectId` from the home page), so older
  * localStorage data keeps working without being wiped.
  *
  * @param {Partial<Task>} task
  * @returns {Task}
  */
 export function withTaskDefaults(task) {
-  return { context: '', contextTool: null, contextUpdatedAt: null, ...task };
+  return { projectId: DEFAULT_PROJECT_ID, context: '', contextTool: null, contextUpdatedAt: null, ...task };
 }

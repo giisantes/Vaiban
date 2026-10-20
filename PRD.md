@@ -1,6 +1,30 @@
-# Vibecoding Project Tracker — PRD
+## Functional Requirements 
 
-**Status:** Hackathon starter PRD · review and fill in the **`<TODO>`** sections before you tag `prd-done`.
+- Must have a kanban board with sections for "To-Do", "In Progress", "In Review" and "Approved/Done"
+- Elements within the kanban board should be moveable (by mouse in addition to an accessible alternative)
+- Users should be able to create, edit and delete tasks
+- Users should be able to set milestones, they should be able to associate tasks with milestones
+- Must be a screen displaying the user's projects, once a project is clicked on, it should take you to that projects kanban board.
+- Must allow users to create, edit, view and remove prompts and their results
+
+
+## Non-Functional Requirements
+
+- elements should be easy and intuitive to edit, move, save, and undo changes
+- accidentally moving a card to the wrong column in the kanban board is easy to undo
+- buttons to copy and paste stored useful prompts to/from clipboard 
+- Users may want the ability to filter the kanban board by milestone
+- Tags could be added to tasks and then these tags could be filtered for
+- milestones could have target dates in addition to names
+- Should autosave
+- data should be secure
+
+## Data Requirements
+
+- Should store necessary user data
+- Name
+- Username/ Display name
+
 
 ---
 

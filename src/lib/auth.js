@@ -12,16 +12,25 @@ import { supabase } from './supabase.js';
 export const PASSWORD_MIN = 8;
 export const PASSWORD_MAX = 72; // bcrypt only uses the first 72 bytes
 
-/** Plain-English version of an auth error. */
+/**
+ * Plain-English version of an auth error. Anything we don't recognise is
+ * shown with Supabase's own message, so problems can actually be diagnosed.
+ */
 export function friendlyError(error) {
-  const msg = (error?.message || '').toLowerCase();
+  const raw = error?.message || String(error || '');
+  const msg = raw.toLowerCase();
+  if (typeof console !== 'undefined') console.error('[auth]', error);
   if (msg.includes('invalid login credentials')) return "That email and password don't match an account.";
   if (msg.includes('email not confirmed')) return 'Confirm your email first – check your inbox for the link we sent.';
   if (msg.includes('already registered')) return 'There is already an account with that email. Try signing in.';
-  if (msg.includes('rate limit') || msg.includes('too many')) return 'Too many attempts. Wait a minute and try again.';
-  if (msg.includes('password')) return error.message;
+  if (msg.includes('rate limit') || msg.includes('too many')) return 'Too many attempts or emails sent. Wait a few minutes and try again.';
+  if (msg.includes('sending') && msg.includes('email')) return "Couldn't send the confirmation email. (Site owner: check the email settings in Supabase → Authentication.)";
+  if (msg.includes('signups not allowed') || msg.includes('signup is disabled')) return 'New sign-ups are switched off at the moment.';
+  if (msg.includes('invalid path') || msg.includes('invalid api key') || msg.includes('no api key')) return 'The app is not connected to its database correctly. (Site owner: check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.)';
+  if (msg.includes('email') && msg.includes('invalid')) return "That email address wasn't accepted. Check it for typos.";
+  if (msg.includes('password')) return raw;
   if (msg.includes('fetch') || msg.includes('network')) return "Can't reach the server. Check your internet connection.";
-  return 'Something went wrong. Please try again.';
+  return `Something went wrong: ${raw || 'unknown error'}`;
 }
 
 /** Checks a new password before it is sent. Returns an error message or ''. */

@@ -12,17 +12,17 @@
 
 One sentence that captures the feeling the tracker should leave you with.
 
-`<TODO>`
+A calm, tidy workbench for messy, fast-moving AI projects: everything has a place, and the one thing that needs your attention stands out.
 
 Two or three references that capture the vibe (links to dribbble shots, screenshots of apps you admire, Pinterest boards — anything visual):
 
-- `<TODO>`
-- `<TODO>`
-- `<TODO>`
+- A physical sticky-note wall: the yellow accent and a board of cards, one idea per note.
+- Trello's cards: readable at a glance, with the title doing most of the work.
+- GitHub Projects: quiet and dense, built for developers rather than for show.
 
 Anti-references — what we are explicitly **not** trying to look like:
 
-- `<TODO>`
+- A default Tailwind template with blue buttons everywhere, or a neon "gamer" dashboard with glowing gradients — and anything that shows status by colour alone (red/green dots with no words).
 
 ## 2. Color palette
 
@@ -32,36 +32,36 @@ These are the colors the build milestones will reference. Once chosen, paste the
 
 | Token | Hex | Where it shows up |
 |---|---|---|
-| `brand-primary` | `<TODO>` | Header, "+" button, focus rings |
-| `brand-accent` | `<TODO>` | Highlights, hover states, links |
-| `surface-page` | `<TODO>` | Page background |
-| `surface-card` | `<TODO>` | Card background |
-| `text-primary` | `<TODO>` | Body text |
-| `text-muted` | `<TODO>` | Captions, dates, counts |
+| `brand-primary` | `#23466E` | Header, "+" button, focus rings |
+| `brand-accent` | `#F2C94C` | Highlights, hover states, links |
+| `surface-page` | `#F4F6F8` | Page background |
+| `surface-card` | `#FFFFFF` | Card background |
+| `text-primary` | `#1B2430` | Body text |
+| `text-muted` | `#5B6878` | Captions, dates, counts |
 
 ### Task type (M6 `tag-style`)
 
 | Token | Hex | When used |
 |---|---|---|
-| `type-feature` | `<TODO>` | Cards tagged `feature` (accent stripe + icon) |
-| `type-bug` | `<TODO>` | Cards tagged `bug` (accent stripe + icon) |
+| `type-feature` | `#2F5FA8` | Cards tagged `feature` (accent stripe + icon) |
+| `type-bug` | `#B3262D` | Cards tagged `bug` (accent stripe + icon) |
 
 ### Due-date states (M8 `due-tint`)
 
 | Token | Hex | When used |
 |---|---|---|
-| `due-safe` | `<TODO>` | More than 2 days out |
-| `due-warning` | `<TODO>` | Less than 24 hours |
-| `due-overdue` | `<TODO>` | Past due |
-| `due-neutral` | `<TODO>` | Done (overrides date) |
+| `due-safe` | `#2F6B55` | More than 2 days out |
+| `due-warning` | `#8A5A00` | Less than 24 hours |
+| `due-overdue` | `#A3242B` | Past due |
+| `due-neutral` | `#5B6878` | Done (overrides date) |
 
 ## 3. Typography
 
 | Role | Font | Why |
 |---|---|---|
-| Heading | `<TODO>` | `<TODO one sentence>` |
-| Body | `<TODO>` | `<TODO one sentence>` |
-| Monospace (tags, badges, code) | `<TODO>` | `<TODO one sentence>` |
+| Heading | Bricolage Grotesque | Has character without being loud, so headings feel made for this tool rather than templated. |
+| Body | IBM Plex Sans | Very readable at small sizes on dense cards, and designed for technical products. |
+| Monospace (tags, badges, code) | IBM Plex Mono | Matches the body font and reads naturally for prompts and context briefings. |
 
 Suggested sizes (override only if the design demands it):
 
@@ -75,11 +75,11 @@ Suggested sizes (override only if the design demands it):
 
 One short sentence per element. These set the tone for the build phase — Person A's modal and Person B's anchor board should both feel like they came from this doc.
 
-- **Cards:** `<TODO>` (e.g. "Light, almost weightless; the only weight is from a 1px border, no shadow except on hover.")
-- **Buttons:** `<TODO>` (e.g. "Solid fill, no gradient, generous padding, rounded-md.")
-- **Modal:** `<TODO>` (e.g. "Centered, max-width-md, slate-900 backdrop at 50% opacity.")
-- **Empty states:** `<TODO>` (e.g. "Dashed border, muted text, never sad.")
-- **Drag affordance (if used):** `<TODO>` (e.g. "None — we use a status dropdown.")
+- **Cards:** White with a 1px border and a 4px coloured left stripe for the type; the background only changes colour when a deadline needs attention.
+- **Buttons:** One solid brand-primary button per screen for the main action; everything else is outlined and quiet.
+- **Modal:** The native dialog element, centred, max 640px wide, dark backdrop at 50% opacity; Escape closes it and keyboard focus stays inside.
+- **Empty states:** Dashed border and one plain sentence saying what will appear and how to add the first item.
+- **Drag affordance (if used):** A dashed outline on the target column while dragging; the status dropdown always works too, so the keyboard is never a second-class way in.
 
 ## 5. Voice / microcopy
 
@@ -87,18 +87,18 @@ Three lines of microcopy that capture the tone of the product. Keep it short —
 
 | Where | Text |
 |---|---|
-| "+" button label | `<TODO>` (e.g. "+ Task" or "Add task" or "New") |
-| Empty column placeholder | `<TODO>` (e.g. "Nothing here yet — keep going.") |
-| Toast after "Copy as Prompt Context" | `<TODO>` (e.g. "Copied. Now paste it into the AI.") |
-| Confirm-delete message | `<TODO>` (e.g. "Delete this task? You can't undo.") |
-| Handoff toast (M7 `task-owner`) | `<TODO>` (e.g. "Handed off to {name}. They've got it.") |
+| "+" button label | + Task |
+| Empty column placeholder | Nothing here yet. |
+| Toast after "Copy as Prompt Context" | Context copied. Paste it into your AI tool. |
+| Confirm-delete message | Delete this task? This can't be undone. |
+| Handoff toast (M7 `task-owner`) | Handed "{task}" to {name}. |
 
 ## 6. Logo / wordmark
 
 The tracker probably doesn't need a logo, but it does need a name and a wordmark style.
 
-- **Product name:** `<TODO>` (match PRD §11 team identity)
-- **Wordmark style:** `<TODO>` (e.g. "Just the name in the heading font, brand-primary color, no icon.")
+- **Product name:** Vibeboard
+- **Wordmark style:** The name in Bricolage Grotesque, text-primary colour, beside a small brand-accent sticky-note square.
 
 ## 7. Out of scope (this hackathon)
 

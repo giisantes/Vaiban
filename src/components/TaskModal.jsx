@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { STAGES, TEAM, TASK_TYPES } from '../constants.js';
+import { typeStyle } from '../lib/typeStyles.js';
+import TypeBadge, { TypeIcon } from './TypeBadge.jsx';
 
 const inputClass =
   'w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 ' +
@@ -19,6 +21,8 @@ function formatDate(iso) {
  *
  * The same modal is used for a new task and for editing an existing one.
  * Status is changed with a dropdown here – no drag-and-drop yet (M5 brief).
+ * M6: the modal's top edge, the heading badge and the type picker all use
+ * the same type colours as the cards, and update as soon as the type changes.
  *
  * @param {{
  *   task: import('../lib/createTask.js').Task | null,  // null = closed
@@ -64,14 +68,17 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose }) {
         e.preventDefault(); // let React state close it, so the two never disagree
         onClose();
       }}
-      className="w-[min(640px,calc(100vw-32px))] rounded-lg border border-slate-200 p-0 text-slate-900 shadow-xl backdrop:bg-slate-900/50"
+      className={`w-[min(640px,calc(100vw-32px))] rounded-lg border border-t-4 border-slate-200 p-0 text-slate-900 shadow-xl backdrop:bg-slate-900/50 ${form ? typeStyle(form.type).topEdge : ''}`}
     >
       {form && (
         <form onSubmit={handleSubmit} className="grid gap-4 p-5">
           <div className="flex items-center justify-between gap-3">
-            <h2 id="task-modal-title" className="text-lg font-semibold">
-              {isNew ? 'New task' : 'Edit task'}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 id="task-modal-title" className="text-lg font-semibold">
+                {isNew ? 'New task' : 'Edit task'}
+              </h2>
+              <TypeBadge type={form.type} />
+            </div>
             <button
               type="button"
               onClick={onClose}
@@ -87,14 +94,33 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose }) {
           </label>
 
           <div className="grid grid-cols-2 gap-3">
-            <label className={labelClass}>
-              <span>Type</span>
-              <select id="task-type" value={form.type} onChange={set('type')} className={inputClass}>
-                {TASK_TYPES.map((t) => (
-                  <option key={t.id} value={t.id}>{t.label}</option>
-                ))}
-              </select>
-            </label>
+            <fieldset className="grid gap-1">
+              <legend className="mb-1 text-sm font-medium text-slate-700">Type</legend>
+              <div className="flex gap-2">
+                {TASK_TYPES.map((t) => {
+                  const checked = form.type === t.id;
+                  return (
+                    <label
+                      key={t.id}
+                      className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-sm font-medium focus-within:ring-2 focus-within:ring-[#23466E] ${
+                        checked ? typeStyle(t.id).selected : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="task-type"
+                        value={t.id}
+                        checked={checked}
+                        onChange={set('type')}
+                        className="sr-only"
+                      />
+                      <TypeIcon type={t.id} />
+                      {t.label}
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
 
             <label className={labelClass}>
               <span>Status</span>

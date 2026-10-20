@@ -24,7 +24,7 @@
 - Should store necessary user data
 - Name
 - Username/ Display name
-
+- email address
 
 ---
 

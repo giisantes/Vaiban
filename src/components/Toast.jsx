@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from 'react';
  * focus is on the toast, so there is time to use it (WCAG 2.2.1).
  *
  * @param {{
- *   toast: { message: string, action?: { label: string, onClick: () => void } } | null,
+ *   toast: { message: string, action?: { label: string, onClick: () => void, shortcut?: string } } | null,
  *   onDone: () => void,
  * }} props
  */
@@ -42,11 +42,14 @@ export default function Toast({ toast, onDone }) {
             <button
               type="button"
               onClick={() => { toast.action.onClick(); }}
+              aria-keyshortcuts={toast.action.shortcut === 'Ctrl+Z' ? 'Control+Z' : undefined}
               className="rounded px-2 py-0.5 font-semibold text-brand-accent underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent"
             >
               {toast.action.label}
             </button>
           )}
+          {/* The toast sits at the end of the page, far away by keyboard – so say the shortcut. */}
+          {toast.action?.shortcut && <span className="text-xs text-slate-300">or {toast.action.shortcut}</span>}
         </div>
       )}
     </div>

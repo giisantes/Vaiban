@@ -30,7 +30,7 @@ export default function AppHeader({ project, onHome, onNewTask, user, onSignOut,
   const name = displayName(user);
   return (
     <header className="mb-4 flex flex-wrap items-center justify-between gap-4">
-      <div className="flex min-w-0 items-center gap-4">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
         <a
           href="#/"
           onClick={(e) => { e.preventDefault(); onHome(); }}
@@ -48,19 +48,19 @@ export default function AppHeader({ project, onHome, onNewTask, user, onSignOut,
 
         {project && (
           <nav aria-label="Breadcrumb" className="min-w-0 border-l border-slate-300 pl-4">
-            <ol className="flex min-w-0 items-center gap-1.5 text-sm text-slate-600">
+            <ol className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-slate-600">
               <li>
                 <a
                   href="#/"
                   onClick={(e) => { e.preventDefault(); onHome(); }}
-                  className="rounded text-brand-primary underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                  className="inline-flex min-h-[24px] items-center rounded px-0.5 text-brand-primary underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                 >
                   Projects
                 </a>
               </li>
               <li aria-hidden="true">/</li>
               <li className="min-w-0">
-                <h1 aria-current="page" className="truncate text-xl font-semibold text-slate-900">{project.name}</h1>
+                <h1 aria-current="page" className="text-xl font-semibold text-slate-900 [overflow-wrap:anywhere]">{project.name}</h1>
               </li>
             </ol>
           </nav>

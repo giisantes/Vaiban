@@ -135,7 +135,7 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose, toda
             <input id="task-title" type="text" value={form.title} onChange={set('title')} required autoFocus data-autofocus className={inputClass} />
           </label>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <fieldset className="grid gap-1">
               <legend className="mb-1 text-sm font-medium text-slate-700">Type</legend>
               <div className="flex gap-2">

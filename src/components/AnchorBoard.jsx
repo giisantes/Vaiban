@@ -60,7 +60,7 @@ function AnchorCard({ anchor, onSave }) {
             href={anchor.url}
             target="_blank"
             rel="noreferrer"
-            className="whitespace-nowrap rounded px-1 text-xs font-medium text-brand-primary underline underline-offset-2 hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+            className="inline-flex min-h-[24px] items-center whitespace-nowrap rounded px-1.5 py-1 text-xs font-medium text-brand-primary underline underline-offset-2 hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
           >
             Open<span className="sr-only"> {anchor.label} (opens in a new tab)</span> ↗
           </a>
@@ -84,12 +84,12 @@ function AnchorCard({ anchor, onSave }) {
 export default function AnchorBoard({ anchors, onSave }) {
   const linked = anchors.filter((a) => a.url).length;
   return (
-    <section aria-labelledby="anchors-heading" className="sticky top-0 z-30 -mx-6 mb-5 border-b border-slate-200 bg-slate-50/95 px-6 py-3 backdrop-blur">
+    <section aria-labelledby="anchors-heading" className="z-30 -mx-4 mb-5 border-b border-slate-200 bg-slate-50/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:sticky lg:top-0">
       <div className="mb-2 flex items-baseline gap-3">
         <h2 id="anchors-heading" className="text-sm font-semibold uppercase tracking-wide text-slate-800">Deliverables</h2>
         <p className="text-xs text-slate-600">{linked} of {anchors.length} linked</p>
       </div>
-      <ul className="grid grid-cols-4 gap-4">
+      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
         {anchors.map((anchor) => (
           <AnchorCard key={anchor.id} anchor={anchor} onSave={onSave} />
         ))}

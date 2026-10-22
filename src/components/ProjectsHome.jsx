@@ -31,7 +31,7 @@ export default function ProjectsHome({ projects, tasks, today, onOpen, onCreate 
   };
 
   return (
-    <main className="grid gap-6">
+    <div className="grid gap-6">
       <div>
         <h1 className="text-2xl font-semibold text-slate-900">Your projects</h1>
         <p className="text-sm text-slate-600">Pick a project to open its board.</p>
@@ -80,7 +80,8 @@ export default function ProjectsHome({ projects, tasks, today, onOpen, onCreate 
                       {linked} of {project.anchors.length} deliverables linked
                     </span>
                     {owners.length > 0 && (
-                      <span className="flex gap-1" aria-label={`People: ${owners.join(', ')}`}>
+                      <span className="flex gap-1">
+                        <span className="sr-only">People: {owners.join(', ')}</span>
                         {owners.map((o) => (
                           <Avatar key={o} name={o} size="sm" />
                         ))}
@@ -126,6 +127,6 @@ export default function ProjectsHome({ projects, tasks, today, onOpen, onCreate 
           <p id="new-project-error" className="text-xs font-medium text-due-overdue sm:col-span-3">Give the project a name.</p>
         )}
       </form>
-    </main>
+    </div>
   );
 }

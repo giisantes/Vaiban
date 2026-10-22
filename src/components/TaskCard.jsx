@@ -1,8 +1,7 @@
 import { DUE_STYLES, dueState } from '../lib/dueState.js';
 import { typeStyle } from '../lib/typeStyles.js';
-import CopyContextButton from './CopyContextButton.jsx';
 import DueChip from './DueChip.jsx';
-import OwnerMenu from './OwnerMenu.jsx';
+import CardActions from './CardActions.jsx';
 import TypeBadge from './TypeBadge.jsx';
 
 /**
@@ -12,7 +11,8 @@ import TypeBadge from './TypeBadge.jsx';
  * (Tab to it, then Enter).
  * M6: a coloured left stripe and a type badge (icon + text) in the corner.
  * M7: the owner's avatar and name – click them to assign the task to
- *     someone else (OwnerMenu).
+ *     someone else. Accessibility pass: a "Move" button as the keyboard
+ *     alternative to dragging (CardActions).
  * `justHandedOff` briefly highlights the card after a reassignment.
  * M8: the card tints and shows a due label as the deadline approaches.
  * M10: a "Copy Context" button next to the owner.
@@ -22,6 +22,7 @@ import TypeBadge from './TypeBadge.jsx';
  *   task: import('../lib/createTask.js').Task,
  *   onOpen: (id: string) => void,
  *   onHandOff: (id: string, name: string) => void,
+ *   onMove: (id: string, status: string, how?: object) => void,
  *   justHandedOff: boolean,
  *   today: string,
  *   onCopied: (ok: boolean) => void,
@@ -30,11 +31,12 @@ import TypeBadge from './TypeBadge.jsx';
  *   onDragEnd: () => void,
  * }} props
  */
-export default function TaskCard({ task, onOpen, onHandOff, justHandedOff, today, onCopied, isDragging, onDragStart, onDragEnd }) {
+export default function TaskCard({ task, onOpen, onHandOff, onMove, justHandedOff, today, onCopied, isDragging, onDragStart, onDragEnd }) {
   const due = dueState(task, today);
 
   return (
     <article
+      data-task-id={task.id}
       draggable
       onDragStart={(e) => {
         e.dataTransfer.setData('text/plain', task.id);
@@ -66,9 +68,7 @@ export default function TaskCard({ task, onOpen, onHandOff, justHandedOff, today
         </div>
       )}
 
-      <OwnerMenu task={task} onHandOff={onHandOff}>
-        <CopyContextButton task={task} onCopied={onCopied} className="ml-auto" />
-      </OwnerMenu>
+      <CardActions task={task} onHandOff={onHandOff} onMove={onMove} onCopied={onCopied} />
     </article>
   );
 }

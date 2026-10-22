@@ -12,3 +12,23 @@ body {
   background-color: #f8fafc; /* slate-50 */
   color: #0f172a;            /* slate-900 */
 }
+
+/* Accessibility pass ------------------------------------------------------ */
+
+/* A clear focus outline on anything reached by keyboard, even where a
+   component forgot to style it (WCAG 2.2 SC 2.4.7 Focus Visible). */
+:focus-visible {
+  outline: 2px solid #23466E;
+  outline-offset: 2px;
+}
+
+/* Respect "reduce motion" in the operating system: no slides, fades or spins
+   (WCAG 2.2 SC 2.3.3 Animation from Interactions). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

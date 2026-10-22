@@ -12,6 +12,7 @@ import TaskCard from './TaskCard.jsx';
  *   tasks: import('../lib/createTask.js').Task[],
  *   onOpenTask: (id: string) => void,
  *   onHandOff: (id: string, name: string) => void,
+ *   onMoveTask: (id: string, status: string, how?: object) => void,
  *   highlightId: string | null,
  *   today: string,
  *   onCopied: (ok: boolean) => void,
@@ -21,7 +22,7 @@ import TaskCard from './TaskCard.jsx';
  *   onDrop: (id: string) => void,
  * }} props
  */
-export default function Column({ stage, tasks, onOpenTask, onHandOff, highlightId, today, onCopied, dragging, onDragStart, onDragEnd, onDrop }) {
+export default function Column({ stage, tasks, onOpenTask, onHandOff, onMoveTask, highlightId, today, onCopied, dragging, onDragStart, onDragEnd, onDrop }) {
   const headingId = `column-${stage.id}`;
   const [over, setOver] = useState(false);
   const canDrop = Boolean(dragging) && dragging.status !== stage.id;
@@ -60,8 +61,9 @@ export default function Column({ stage, tasks, onOpenTask, onHandOff, highlightI
         <h2 id={headingId} className="text-base font-semibold uppercase text-slate-800">
           {stage.label}
         </h2>
-        <span className="text-xs text-slate-600" aria-label={`${tasks.length} tasks`}>
+        <span className="text-xs text-slate-600">
           {tasks.length}
+          <span className="sr-only"> {tasks.length === 1 ? 'task' : 'tasks'}</span>
         </span>
       </div>
 
@@ -77,6 +79,7 @@ export default function Column({ stage, tasks, onOpenTask, onHandOff, highlightI
                 task={task}
                 onOpen={onOpenTask}
                 onHandOff={onHandOff}
+                onMove={onMoveTask}
                 justHandedOff={task.id === highlightId}
                 today={today}
                 onCopied={onCopied}

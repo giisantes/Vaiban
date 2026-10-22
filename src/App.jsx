@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
 import { useAuth } from './hooks/useAuth.js';
+import { useHash } from './hooks/useHash.js';
 import { signOut } from './lib/auth.js';
 import { cloudStore, localStore } from './lib/storage.js';
 import { configError, supabase } from './lib/supabase.js';
+import AccessibilityStatement from './components/AccessibilityStatement.jsx';
 import AuthScreen from './components/AuthScreen.jsx';
 import FullPageMessage from './components/FullPageMessage.jsx';
 import Workspace from './components/Workspace.jsx';
@@ -10,6 +12,7 @@ import Workspace from './components/Workspace.jsx';
 /**
  * Vibeboard – the entry point decides what to show:
  *
+ *   #/accessibility                          → the accessibility statement (signed in or not)
  *   accounts not set up (no Supabase keys) → the board, saved in this browser
  *   checking who is signed in               → "Loading…"
  *   arrived from a password-reset link       → "Choose a new password"
@@ -23,6 +26,9 @@ export default function App() {
   const auth = useAuth();
   const userId = auth.user?.id;
   const store = useMemo(() => (userId ? cloudStore(userId) : localStore), [userId]);
+  const hash = useHash();
+
+  if (hash === '#/accessibility') return <AccessibilityStatement />;
 
   if (configError) {
     return (

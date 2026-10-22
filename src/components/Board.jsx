@@ -12,7 +12,7 @@ import Column from './Column.jsx';
  *   tasks: import('../lib/createTask.js').Task[],
  *   onOpenTask: (id: string) => void,
  *   onHandOff: (id: string, name: string) => void,
- *   onMoveTask: (id: string, status: string) => void,
+ *   onMoveTask: (id: string, status: string, how?: object) => void,
  *   highlightId: string | null,
  *   today: string,
  *   onCopied: (ok: boolean) => void,
@@ -22,7 +22,9 @@ export default function Board({ tasks, onOpenTask, onHandOff, onMoveTask, highli
   const [dragging, setDragging] = useState(null); // the task being dragged, or null
 
   return (
-    <main className="grid grid-cols-4 items-start gap-4">
+    // One column on narrow screens or high zoom, two on tablets, four on desktop –
+    // so nothing has to scroll sideways at 400% zoom (WCAG 2.2 SC 1.4.10 Reflow).
+    <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {STAGES.map((stage) => (
         <Column
           key={stage.id}
@@ -30,6 +32,7 @@ export default function Board({ tasks, onOpenTask, onHandOff, onMoveTask, highli
           tasks={tasks.filter((task) => task.status === stage.id)}
           onOpenTask={onOpenTask}
           onHandOff={onHandOff}
+          onMoveTask={onMoveTask}
           highlightId={highlightId}
           today={today}
           onCopied={onCopied}
@@ -39,6 +42,6 @@ export default function Board({ tasks, onOpenTask, onHandOff, onMoveTask, highli
           onDrop={(id) => { setDragging(null); onMoveTask(id, stage.id); }}
         />
       ))}
-    </main>
+    </div>
   );
 }

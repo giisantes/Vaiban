@@ -115,7 +115,7 @@ export default function Workspace({ store, user, onSignOut }) {
   }, [history]);
 
   /** A toast that offers Undo for the change that was just made. */
-  const undoableToast = (message) => setToast({ message, action: { label: 'Undo', onClick: undo } });
+  const undoableToast = (message) => setToast({ message, action: { label: 'Undo', onClick: undo, shortcut: 'Ctrl+Z' } });
 
   // Ctrl/Cmd+Z undoes the last board change – but not while typing in a
   // field or while the modal is open, where the browser's own undo applies.
@@ -156,8 +156,10 @@ export default function Workspace({ store, user, onSignOut }) {
     setHighlightId(id);
   };
 
-  // M12: a card was dropped on another column. It goes to the bottom of that column.
-  const moveTask = (id, status) => {
+  // M12: a card was dropped on another column (or moved with the card's
+  // "Move" menu). It goes to the bottom of that column.
+  const [focusTaskId, setFocusTaskId] = useState(null);
+  const moveTask = (id, status, how = {}) => {
     const task = tasks.find((t) => t.id === id);
     if (!task || task.status === status) return;
     change(`moving "${task.title}" to ${stageLabel(status)}`, (prev) => [
@@ -166,6 +168,29 @@ export default function Workspace({ store, user, onSignOut }) {
     ]);
     undoableToast(`Moved "${task.title}" to ${stageLabel(status)}.`);
     setHighlightId(id);
+    // Keyboard users: the card has jumped to another column, so take focus
+    // with it instead of dropping them back at the top of the page.
+    if (how.fromKeyboardMenu) setFocusTaskId(id);
+  };
+
+  useEffect(() => {
+    if (!focusTaskId) return;
+    document.querySelector(`[data-task-id="${focusTaskId}"] h3 button`)?.focus();
+    setFocusTaskId(null);
+  }, [focusTaskId, storedTasks]);
+
+  // Each screen has its own page title, so screen-reader users and browser
+  // tabs say where you are (WCAG 2.2 SC 2.4.2 Page Titled).
+  useEffect(() => {
+    document.title = project ? `${project.name} – Vibeboard` : 'Your projects – Vibeboard';
+  }, [project]);
+
+  /** "Skip to main content" – jumps past the header and the Deliverables strip. */
+  const skipToMain = (e) => {
+    e.preventDefault(); // a plain #main link would confuse the #/ router
+    const target = document.getElementById(project ? 'board' : 'main');
+    target?.focus();
+    target?.scrollIntoView();
   };
 
   // M10 copy-context: confirm on the page as well as on the button.
@@ -232,7 +257,14 @@ export default function Workspace({ store, user, onSignOut }) {
   if (!loaded) return <FullPageMessage>Loading your projects…</FullPageMessage>;
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen p-4 sm:p-6">
+      <a
+        href="#main"
+        onClick={skipToMain}
+        className="sr-only z-50 rounded-md bg-brand-primary px-4 py-2 text-sm font-medium text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+      >
+        Skip to main content
+      </a>
       <AppHeader
         project={project}
         onHome={() => navigate(null)}
@@ -242,11 +274,13 @@ export default function Workspace({ store, user, onSignOut }) {
         saveStatus={saveStatus}
         isCloud={isCloud}
       />
+      <main id="main" tabIndex={-1} className="focus:outline-none">
       {offerImport && !project && <ImportBanner count={localData.tasks.length} onImport={importLocal} onDismiss={dismissImport} />}
 
       {project ? (
         <>
           <AnchorBoard key={project.id} anchors={project.anchors} onSave={saveAnchor} />
+          <h2 id="board" tabIndex={-1} className="sr-only">Board</h2>
           <Board
             tasks={tasks.filter((t) => t.projectId === project.id)}
             onOpenTask={openTask}
@@ -260,6 +294,13 @@ export default function Workspace({ store, user, onSignOut }) {
       ) : (
         <ProjectsHome projects={projects} tasks={tasks} today={today} onOpen={navigate} onCreate={addProject} />
       )}
+      </main>
+
+      <footer className="mt-10 border-t border-slate-200 pt-4 text-xs text-slate-600">
+        <a href="#/accessibility" className="inline-flex min-h-[24px] items-center rounded underline underline-offset-2 hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">
+          Accessibility statement
+        </a>
+      </footer>
 
       <TaskModal task={editing} isNew={isNew} onSave={saveTask} onDelete={deleteTask} onClose={closeModal} today={today} />
       <Toast toast={toast} onDone={clearToast} />

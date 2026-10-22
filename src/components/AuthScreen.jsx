@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   PASSWORD_MIN, checkPassword, friendlyError, sendPasswordReset, setNewPassword, signIn, signUp,
 } from '../lib/auth.js';
@@ -89,6 +89,10 @@ export default function AuthScreen({ initialMode = 'signin', onPasswordReset }) 
   const [busy, setBusy] = useState(false);
   const [sentTo, setSentTo] = useState('');
   const [notice, setNotice] = useState('');
+
+  useEffect(() => {
+    document.title = `${TITLES[mode]} – Vibeboard`;
+  }, [mode]);
 
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
   const go = (next) => { setMode(next); setError(''); setNotice(''); };
@@ -192,12 +196,12 @@ export default function AuthScreen({ initialMode = 'signin', onPasswordReset }) 
               <div className="flex flex-wrap justify-between gap-2 text-sm">
                 {mode === 'signin' && (
                   <>
-                    <button type="button" onClick={() => go('signup')} className="rounded text-brand-primary underline underline-offset-2 hover:no-underline">Create an account</button>
-                    <button type="button" onClick={() => go('forgot')} className="rounded text-brand-primary underline underline-offset-2 hover:no-underline">Forgot password?</button>
+                    <button type="button" onClick={() => go('signup')} className="min-h-[24px] rounded py-1 text-brand-primary underline underline-offset-2 hover:no-underline">Create an account</button>
+                    <button type="button" onClick={() => go('forgot')} className="min-h-[24px] rounded py-1 text-brand-primary underline underline-offset-2 hover:no-underline">Forgot password?</button>
                   </>
                 )}
                 {(mode === 'signup' || mode === 'forgot') && (
-                  <button type="button" onClick={() => go('signin')} className="rounded text-brand-primary underline underline-offset-2 hover:no-underline">
+                  <button type="button" onClick={() => go('signin')} className="min-h-[24px] rounded py-1 text-brand-primary underline underline-offset-2 hover:no-underline">
                     {mode === 'signup' ? 'Already have an account? Sign in' : 'Back to sign in'}
                   </button>
                 )}
@@ -205,6 +209,9 @@ export default function AuthScreen({ initialMode = 'signin', onPasswordReset }) 
             </form>
           )}
         </section>
+        <p className="mt-4 text-center text-xs text-slate-600">
+          <a href="#/accessibility" className="inline-flex min-h-[24px] items-center rounded underline underline-offset-2 hover:no-underline">Accessibility statement</a>
+        </p>
       </div>
     </main>
   );

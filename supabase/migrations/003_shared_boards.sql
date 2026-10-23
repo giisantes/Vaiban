@@ -420,3 +420,7 @@ begin
     end loop;
   end loop;
 end $$;
+
+-- Tell the Data API about the new functions straight away (otherwise it can
+-- take a while, and the app reports "Could not find the function …").
+notify pgrst, 'reload schema';

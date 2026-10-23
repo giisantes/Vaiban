@@ -364,7 +364,9 @@ function WorkspaceView({ store, user, onSignOut, settings, onSettingsChange, dat
 
   return (
     <PeopleContext.Provider value={people}>
-    <div className="min-h-screen p-4 sm:p-6">
+    <div className="flex min-h-screen flex-col p-4 sm:p-6">
+      {/* flex column + flex-1 on <main>: on short pages the footer sits at the
+          bottom of the window instead of straight under the board. */}
       <a
         href="#main"
         onClick={skipToMain}
@@ -385,7 +387,7 @@ function WorkspaceView({ store, user, onSignOut, settings, onSettingsChange, dat
         onShare={isCloud && project ? () => setShareOpen(true) : undefined}
         waitingCount={waitingCount}
       />
-      <main id="main" tabIndex={-1} className="focus:outline-none">
+      <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
       {offerImport && !project && !joinToken && <ImportBanner count={localData.tasks.length} onImport={importLocal} onDismiss={dismissImport} />}
 
       {joinToken ? (

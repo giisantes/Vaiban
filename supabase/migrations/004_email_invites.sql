@@ -106,3 +106,7 @@ end $$;
 
 revoke execute on function public.invite_info(text), public.prepare_invite_email(uuid, text) from public, anon;
 grant execute on function public.invite_info(text), public.prepare_invite_email(uuid, text) to authenticated;
+
+-- Tell the Data API about the new functions straight away (otherwise it can
+-- take a while, and the app reports "Could not find the function …").
+notify pgrst, 'reload schema';

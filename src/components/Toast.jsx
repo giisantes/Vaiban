@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 /**
  * Short confirmation message at the bottom of the screen.
  * It sits in an aria-live region, so screen readers announce it too.
+ * Always dark, in both themes, so it stands out the same way.
  * Fades in over 200 ms (DESIGN.md §7) and hides itself after a few seconds.
  *
  * M12: a toast can carry an action button (e.g. "Undo"). Toasts with an
@@ -35,7 +36,7 @@ export default function Toast({ toast, onDone }) {
           onMouseLeave={() => setPaused(false)}
           onFocus={() => setPaused(true)}
           onBlur={(e) => { if (!ref.current?.contains(e.relatedTarget)) setPaused(false); }}
-          className="pointer-events-auto flex animate-toast-in items-center gap-4 rounded-md bg-slate-900 px-4 py-2.5 text-sm text-white shadow-lg motion-reduce:animate-none"
+          className="pointer-events-auto flex animate-toast-in items-center gap-4 rounded-md bg-[#0F172A] px-4 py-2.5 text-sm text-white shadow-lg ring-1 ring-[#64748B] motion-reduce:animate-none"
         >
           <p>{toast.message}</p>
           {toast.action && (
@@ -49,7 +50,7 @@ export default function Toast({ toast, onDone }) {
             </button>
           )}
           {/* The toast sits at the end of the page, far away by keyboard – so say the shortcut. */}
-          {toast.action?.shortcut && <span className="text-xs text-slate-300">or {toast.action.shortcut}</span>}
+          {toast.action?.shortcut && <span className="text-xs text-[#CBD5E1]">or {toast.action.shortcut}</span>}
         </div>
       )}
     </div>

@@ -3,6 +3,7 @@
 -- One table holds each user's saved data as JSON:
 --   key = 'projects' → the list of projects (with their deliverable links)
 --   key = 'tasks'    → every task on every board
+--   key = 'settings' → text size and theme (D60)
 --
 -- Row-level security (RLS) is what keeps accounts apart: the database itself
 -- only ever lets a signed-in user see or change rows where user_id is their
@@ -10,7 +11,7 @@
 
 create table if not exists public.user_data (
   user_id    uuid        not null default auth.uid() references auth.users (id) on delete cascade,
-  key        text        not null check (key in ('projects', 'tasks')),
+  key        text        not null check (key in ('projects', 'tasks', 'settings')),
   value      jsonb       not null,
   updated_at timestamptz not null default now(),
   primary key (user_id, key),

@@ -7,7 +7,7 @@ import TaskDetails from './TaskDetails.jsx';
 import TypeBadge, { TypeIcon } from './TypeBadge.jsx';
 
 const inputClass =
-  'w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 ' +
+  'w-full rounded-md border border-slate-300 bg-surface px-2 py-1.5 text-sm text-slate-900 ' +
   'focus:outline-none focus:ring-2 focus:ring-brand-primary';
 const labelClass = 'grid gap-1 text-sm font-medium text-slate-700';
 
@@ -107,7 +107,7 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose, toda
         e.preventDefault(); // let React state close it, so the two never disagree
         onClose();
       }}
-      className={`max-h-[calc(100vh-32px)] w-[min(680px,calc(100vw-32px))] overflow-y-auto rounded-lg border border-t-4 border-slate-200 p-0 text-slate-900 shadow-xl backdrop:bg-slate-900/50 ${form ? typeStyle(form.type).topEdge : ''}`}
+      className={`max-h-[calc(100vh-32px)] w-[min(680px,calc(100vw-32px))] overflow-y-auto rounded-lg border border-t-4 border-slate-200 bg-surface p-0 text-slate-900 shadow-xl backdrop:bg-black/60 ${form ? typeStyle(form.type).topEdge : ''}`}
     >
       {form && mode === 'view' && (
         <TaskDetails task={task} today={today} onEdit={() => setMode('edit')} onClose={onClose} />
@@ -145,7 +145,7 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose, toda
                     <label
                       key={t.id}
                       className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-sm font-medium focus-within:ring-2 focus-within:ring-brand-primary ${
-                        checked ? typeStyle(t.id).selected : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                        checked ? typeStyle(t.id).selected : 'border-slate-300 bg-surface text-slate-700 hover:bg-slate-50'
                       }`}
                     >
                       <input
@@ -212,7 +212,7 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose, toda
                 <button
                   type="button"
                   onClick={() => setConfirmingDelete(true)}
-                  className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+                  className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-due-overdue hover:bg-due-overdue-soft"
                 >
                   Delete task
                 </button>
@@ -223,7 +223,7 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose, toda
                   <button
                     type="button"
                     onClick={() => onDelete(form.id)}
-                    className="rounded-md bg-red-700 px-3 py-1.5 font-medium text-white hover:bg-red-800"
+                    className="rounded-md bg-due-overdue px-3 py-1.5 font-medium text-due-overdue-on hover:brightness-110"
                   >
                     Delete
                   </button>

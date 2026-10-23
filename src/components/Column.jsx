@@ -55,7 +55,7 @@ export default function Column({ stage, tasks, onOpenTask, onHandOff, onMoveTask
     <section
       aria-labelledby={headingId}
       {...dropProps}
-      className={`flex min-h-[8rem] min-w-0 flex-col rounded-lg p-3 transition-colors duration-150 ${over && canDrop ? 'bg-[#E3EAF3]' : 'bg-slate-100'} ${outline}`}
+      className={`flex min-h-[8rem] min-w-0 flex-col rounded-lg p-3 transition-colors duration-150 ${over && canDrop ? 'bg-highlight' : 'bg-slate-100'} ${outline}`}
     >
       <div className="mb-3 flex items-baseline justify-between">
         <h2 id={headingId} className="text-base font-semibold uppercase text-slate-800">
@@ -93,7 +93,7 @@ export default function Column({ stage, tasks, onOpenTask, onHandOff, onMoveTask
       )}
 
       {canDrop && (
-        <p aria-hidden="true" className={`mt-2 rounded-md border-2 border-dashed p-2 text-center text-xs font-medium ${over ? 'border-brand-primary text-brand-primary' : 'border-slate-300 text-slate-600'}`}>
+        <p aria-hidden="true" className={`mt-2 rounded-md border-2 border-dashed p-2 text-center text-xs font-medium ${over ? 'border-brand-primary text-link' : 'border-slate-300 text-slate-600'}`}>
           {over ? 'Drop to move here' : `Move to ${stage.label}`}
         </p>
       )}

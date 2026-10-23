@@ -13,11 +13,11 @@
 
 /** Class strings per state. Full strings so Tailwind can find them. */
 export const DUE_STYLES = {
-  overdue: { card: 'bg-due-overdue-soft', chip: 'bg-due-overdue text-white' },
-  warning: { card: 'bg-due-warning-soft', chip: 'bg-white text-due-warning ring-1 ring-inset ring-due-warning' },
-  safe:    { card: 'bg-white',            chip: 'bg-due-safe-soft text-due-safe' },
-  neutral: { card: 'bg-white',            chip: 'bg-due-neutral-soft text-due-neutral' },
-  none:    { card: 'bg-white',            chip: '' },
+  overdue: { card: 'bg-due-overdue-soft', chip: 'bg-due-overdue text-due-overdue-on' },
+  warning: { card: 'bg-due-warning-soft', chip: 'bg-surface text-due-warning ring-1 ring-inset ring-due-warning' },
+  safe:    { card: 'bg-surface',            chip: 'bg-due-safe-soft text-due-safe' },
+  neutral: { card: 'bg-surface',            chip: 'bg-due-neutral-soft text-due-neutral' },
+  none:    { card: 'bg-surface',            chip: '' },
 };
 
 /** Whole days from `fromISO` to `toISO` (both 'YYYY-MM-DD'). */

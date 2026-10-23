@@ -90,7 +90,7 @@ export default function CardActions({ task, onHandOff, onMove, onCopied }) {
           aria-label={`Move “${task.title}” to another column`}
           onClick={() => toggle('move')}
           className={`relative z-10 inline-flex min-h-[28px] items-center gap-1 whitespace-nowrap rounded-md border px-2 py-1 text-xs font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${
-            open === 'move' ? 'border-slate-400 bg-slate-100 text-slate-900' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+            open === 'move' ? 'border-slate-400 bg-slate-100 text-slate-900' : 'border-slate-300 bg-surface text-slate-700 hover:bg-slate-100'
           }`}
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -104,8 +104,8 @@ export default function CardActions({ task, onHandOff, onMove, onCopied }) {
       </div>
 
       {open && (
-        <div id={listId} ref={list} className="relative z-10 mt-2 rounded-md border border-slate-200 bg-white p-1">
-          <p id={`${listId}-label`} className="px-2 pb-1 pt-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+        <div id={listId} ref={list} className="relative z-10 mt-2 rounded-md border border-slate-200 bg-surface p-1">
+          <p id={`${listId}-label`} className="px-2 pb-1 pt-0.5 text-xs font-semibold uppercase tracking-wide text-slate-600">
             {open === 'owner' ? 'Assign to' : 'Move to'}
           </p>
           <ul aria-labelledby={`${listId}-label`} className="grid gap-0.5">

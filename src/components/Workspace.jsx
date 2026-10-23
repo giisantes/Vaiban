@@ -53,9 +53,11 @@ import ImportBanner from './ImportBanner.jsx';
  *   store: import('../lib/storage.js').Store,  // this browser, or the user's account
  *   user: object | null,                       // the Supabase user (null = browser-only mode)
  *   onSignOut?: () => void,
+ *   settings: { textSize: string, theme: string },   // display settings (D60)
+ *   onSettingsChange: (changes: object) => void,
  * }} props
  */
-export default function Workspace({ store, user, onSignOut }) {
+export default function Workspace({ store, user, onSignOut, settings, onSettingsChange }) {
   const isCloud = store.kind === 'cloud';
   // Browser-only mode starts with the demo data; a new account starts empty.
   const [storedProjects, setProjects, projectsStatus, retryProjects] = useStoredState(store, 'projects', isCloud ? () => [] : seedProjects);
@@ -273,6 +275,8 @@ export default function Workspace({ store, user, onSignOut }) {
         onSignOut={onSignOut}
         saveStatus={saveStatus}
         isCloud={isCloud}
+        settings={settings}
+        onSettingsChange={onSettingsChange}
       />
       <main id="main" tabIndex={-1} className="focus:outline-none">
       {offerImport && !project && <ImportBanner count={localData.tasks.length} onImport={importLocal} onDismiss={dismissImport} />}

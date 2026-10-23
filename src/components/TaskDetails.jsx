@@ -58,7 +58,7 @@ export default function TaskDetails({ task, today, onEdit, onClose }) {
         </button>
       </div>
 
-      <dl className="grid grid-cols-2 gap-4 rounded-md border border-slate-200 p-3 sm:grid-cols-4">
+      <dl className="grid grid-cols-1 gap-4 rounded-md border border-slate-200 p-3 sm:grid-cols-2">
         <Fact label="Status">{status}</Fact>
         <Fact label="Owner">
           <span className="flex items-center gap-2">
@@ -95,7 +95,7 @@ export default function TaskDetails({ task, today, onEdit, onClose }) {
           </p>
         </div>
         {context ? (
-          <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap font-mono text-[13px] leading-relaxed text-slate-800">{context}</pre>
+          <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap font-mono text-sm leading-relaxed text-slate-800">{context}</pre>
         ) : (
           <p className="text-sm text-slate-600">No context yet. Press "Edit task" to add a briefing.</p>
         )}

@@ -8,7 +8,9 @@ import { avatarColour, initials } from '../lib/people.js';
  * @param {{ name: string, size?: 'sm'|'md' }} props
  */
 export default function Avatar({ name, size = 'md' }) {
-  const dims = size === 'sm' ? 'h-6 w-6 text-[10px]' : 'h-7 w-7 text-xs';
+  // Initials are decorative (the name is always written next to them), so they
+  // can be smaller than body text; rem keeps them in step with the text-size setting.
+  const dims = size === 'sm' ? 'h-7 w-7 text-[0.75rem]' : 'h-9 w-9 text-[0.875rem]';
   if (!name) {
     return (
       <span aria-hidden="true" className={`inline-flex shrink-0 items-center justify-center rounded-full border border-dashed border-slate-400 font-semibold text-slate-600 ${dims}`}>

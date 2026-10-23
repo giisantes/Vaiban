@@ -1,30 +1,54 @@
 /** @type {import('tailwindcss').Config} */
+
+// Colours come from CSS variables (src/index.css), so one set of class names
+// works in both the light and the dark theme: the variables change, the
+// classes don't. `<alpha-value>` keeps opacity modifiers like bg-slate-50/95 working.
+const v = (name) => `rgb(var(--${name}) / <alpha-value>)`;
+
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
       colors: {
+        // Greys: the light theme uses Tailwind's own slate values; the dark
+        // theme swaps them round (light text on dark surfaces).
+        slate: Object.fromEntries([50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map((n) => [n, v(`slate-${n}`)])),
+        surface: v('surface'),       // cards, inputs, dialogs (white in the light theme)
+        highlight: v('highlight'),   // drop target, import banner
+        link: v('link'),             // link text – lighter blue in the dark theme
+
         // Brand colours from DESIGN.md §2.
-        // The accent yellow is 1.6:1 on white: backgrounds and outlines only, never text.
-        brand: { primary: '#23466E', accent: '#F2C94C' },
+        // The accent yellow is 1.6:1 on white: backgrounds and outlines only, never text on light.
+        brand: { primary: v('brand-primary'), accent: '#F2C94C' },
 
-        // M6 tag-style — task type colours from DESIGN.md §2.
-        // `DEFAULT` is the strong colour (stripe, icon, label text);
-        // `soft` is the light badge background. Both pass WCAG AA together (5.4:1).
-        // Use as e.g. `border-l-feature`, `bg-feature-soft text-feature`.
-        feature: { DEFAULT: '#2F5FA8', soft: '#E6EEFA' },
-        bug:     { DEFAULT: '#B3262D', soft: '#FBE5E6' },
+        // M6 tag-style — task type colours (DESIGN.md §2).
+        // `DEFAULT` = stripe / icon / label text, `soft` = badge background.
+        feature: { DEFAULT: v('feature'), soft: v('feature-soft') },
+        bug:     { DEFAULT: v('bug'),     soft: v('bug-soft') },
 
-        // M8 due-tint — due-date states from DESIGN.md §2.
-        // `DEFAULT` = label text / solid chip, `soft` = card tint.
-        // Every DEFAULT passes WCAG AA on its soft tint (5.0–6.2:1) and on white.
+        // M8 due-tint — due-date states (DESIGN.md §2).
+        // `DEFAULT` = label text / solid chip, `soft` = card tint, `on` = text on the solid chip.
         due: {
-          safe:    { DEFAULT: '#2F6B55', soft: '#E7F2EC' },
-          warning: { DEFAULT: '#8A5A00', soft: '#FDF1D6' },
-          overdue: { DEFAULT: '#A3242B', soft: '#FBE6E7' },
-          neutral: { DEFAULT: '#5B6878', soft: '#EEF1F4' },
+          safe:    { DEFAULT: v('due-safe'),    soft: v('due-safe-soft') },
+          warning: { DEFAULT: v('due-warning'), soft: v('due-warning-soft') },
+          overdue: { DEFAULT: v('due-overdue'), soft: v('due-overdue-soft'), on: v('due-overdue-on') },
+          neutral: { DEFAULT: v('due-neutral'), soft: v('due-neutral-soft') },
         },
       },
+
+      // Text sizes (D59): at the standard setting the smallest text is 14pt
+      // (≈18.7px), the minimum recommended in Goodwin and Loizides (2025, p. 18).
+      // Everything is in rem, so the Settings text-size option (D60) scales the
+      // whole app by changing one root font size in index.css.
+      fontSize: {
+        xs:   ['1.1667rem', { lineHeight: '1.5rem' }],   // 14pt
+        sm:   ['1.1667rem', { lineHeight: '1.625rem' }], // 14pt
+        base: ['1.25rem',   { lineHeight: '1.75rem' }],  // 15pt
+        lg:   ['1.375rem',  { lineHeight: '1.875rem' }],
+        xl:   ['1.5rem',    { lineHeight: '2rem' }],
+        '2xl': ['1.875rem', { lineHeight: '2.375rem' }],
+      },
+
       // M7 task-owner — the handoff toast fades in over 200 ms (DESIGN.md §7).
       keyframes: {
         'toast-in': {

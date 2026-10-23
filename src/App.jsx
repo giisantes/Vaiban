@@ -1,13 +1,19 @@
 import { useMemo } from 'react';
 import { useAuth } from './hooks/useAuth.js';
 import { useHash } from './hooks/useHash.js';
+import { useSettings } from './hooks/useSettings.js';
 import { signOut } from './lib/auth.js';
+import { applySettings, readLocalSettings } from './lib/settings.js';
 import { cloudStore, localStore } from './lib/storage.js';
 import { configError, supabase } from './lib/supabase.js';
 import AccessibilityStatement from './components/AccessibilityStatement.jsx';
 import AuthScreen from './components/AuthScreen.jsx';
 import FullPageMessage from './components/FullPageMessage.jsx';
 import Workspace from './components/Workspace.jsx';
+
+// Apply this browser's saved text size and theme before the first render,
+// so the page doesn't flash at the wrong size or colour.
+applySettings(readLocalSettings());
 
 /**
  * Vibeboard – the entry point decides what to show:
@@ -27,6 +33,9 @@ export default function App() {
   const userId = auth.user?.id;
   const store = useMemo(() => (userId ? cloudStore(userId) : localStore), [userId]);
   const hash = useHash();
+  // Display settings (text size, theme) – D59, D60.
+  const [settings, updateSettings] = useSettings(store);
+  const settingsProps = { settings, onSettingsChange: updateSettings };
 
   if (hash === '#/accessibility') return <AccessibilityStatement />;
 
@@ -38,14 +47,14 @@ export default function App() {
       </FullPageMessage>
     );
   }
-  if (!supabase) return <Workspace store={localStore} user={null} />;
+  if (!supabase) return <Workspace store={localStore} user={null} {...settingsProps} />;
   if (auth.session === undefined) return <FullPageMessage>Loading…</FullPageMessage>;
   if (auth.recovering) {
     // key: start the screen afresh in "reset" mode, even if it was already showing
-    return <AuthScreen key="reset" initialMode="reset" onPasswordReset={auth.doneRecovering} />;
+    return <AuthScreen key="reset" initialMode="reset" onPasswordReset={auth.doneRecovering} {...settingsProps} />;
   }
-  if (!auth.session) return <AuthScreen key="auth" />;
+  if (!auth.session) return <AuthScreen key="auth" {...settingsProps} />;
 
   // key: a different user gets a completely fresh workspace (no leftover state)
-  return <Workspace key={userId} store={store} user={auth.user} onSignOut={signOut} />;
+  return <Workspace key={userId} store={store} user={auth.user} onSignOut={signOut} {...settingsProps} />;
 }

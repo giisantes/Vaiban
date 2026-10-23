@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
+import SettingsButton from './SettingsButton.jsx';
 import {
   PASSWORD_MIN, checkPassword, friendlyError, sendPasswordReset, setNewPassword, signIn, signUp,
 } from '../lib/auth.js';
 
 const inputClass =
-  'w-full rounded-md border border-slate-300 bg-white px-2.5 py-2 text-sm text-slate-900 ' +
+  'w-full rounded-md border border-slate-300 bg-surface px-2.5 py-2 text-sm text-slate-900 ' +
   'focus:outline-none focus:ring-2 focus:ring-brand-primary aria-[invalid=true]:border-due-overdue';
 
 /** Labelled input. `hint` sits under the label and is linked with aria-describedby. */
@@ -55,8 +56,8 @@ function Logo() {
     <div className="flex items-center justify-center gap-2 text-xl font-bold tracking-tight text-slate-900">
       <span aria-hidden="true" className="flex h-8 items-end gap-0.5 rounded bg-brand-primary p-1">
         <i className="block h-5 w-1.5 rounded-sm bg-brand-accent" />
-        <i className="block h-3 w-1.5 rounded-sm bg-white" />
-        <i className="block h-4 w-1.5 rounded-sm bg-white/70" />
+        <i className="block h-3 w-1.5 rounded-sm bg-surface" />
+        <i className="block h-4 w-1.5 rounded-sm bg-surface/70" />
       </span>
       Vibeboard
     </div>
@@ -82,7 +83,7 @@ const TITLES = {
  *
  * @param {{ initialMode?: keyof TITLES, onPasswordReset?: () => void }} props
  */
-export default function AuthScreen({ initialMode = 'signin', onPasswordReset }) {
+export default function AuthScreen({ initialMode = 'signin', onPasswordReset, settings, onSettingsChange }) {
   const [mode, setMode] = useState(initialMode);
   const [form, setForm] = useState({ name: '', username: '', email: '', password: '' });
   const [error, setError] = useState('');
@@ -146,7 +147,7 @@ export default function AuthScreen({ initialMode = 'signin', onPasswordReset }) 
     <main className="grid min-h-screen place-items-center bg-slate-50 p-6">
       <div className="w-full max-w-sm">
         <Logo />
-        <section aria-labelledby="auth-title" className="mt-6 grid gap-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <section aria-labelledby="auth-title" className="mt-6 grid gap-4 rounded-lg border border-slate-200 bg-surface p-6 shadow-sm">
           <h1 id="auth-title" className="text-lg font-semibold text-slate-900">{TITLES[mode]}</h1>
 
           {mode === 'check-email' ? (
@@ -157,7 +158,7 @@ export default function AuthScreen({ initialMode = 'signin', onPasswordReset }) 
                   : <>We've sent a confirmation link to <strong>{sentTo}</strong>. Open it to finish creating your account.</>}
               </p>
               <p className="text-slate-600">It can take a minute. Check your spam folder too.</p>
-              <button type="button" onClick={() => go('signin')} className="justify-self-start rounded text-brand-primary underline underline-offset-2 hover:no-underline">
+              <button type="button" onClick={() => go('signin')} className="justify-self-start rounded text-link underline underline-offset-2 hover:no-underline">
                 Back to sign in
               </button>
             </div>
@@ -196,12 +197,12 @@ export default function AuthScreen({ initialMode = 'signin', onPasswordReset }) 
               <div className="flex flex-wrap justify-between gap-2 text-sm">
                 {mode === 'signin' && (
                   <>
-                    <button type="button" onClick={() => go('signup')} className="min-h-[24px] rounded py-1 text-brand-primary underline underline-offset-2 hover:no-underline">Create an account</button>
-                    <button type="button" onClick={() => go('forgot')} className="min-h-[24px] rounded py-1 text-brand-primary underline underline-offset-2 hover:no-underline">Forgot password?</button>
+                    <button type="button" onClick={() => go('signup')} className="min-h-[24px] rounded py-1 text-link underline underline-offset-2 hover:no-underline">Create an account</button>
+                    <button type="button" onClick={() => go('forgot')} className="min-h-[24px] rounded py-1 text-link underline underline-offset-2 hover:no-underline">Forgot password?</button>
                   </>
                 )}
                 {(mode === 'signup' || mode === 'forgot') && (
-                  <button type="button" onClick={() => go('signin')} className="min-h-[24px] rounded py-1 text-brand-primary underline underline-offset-2 hover:no-underline">
+                  <button type="button" onClick={() => go('signin')} className="min-h-[24px] rounded py-1 text-link underline underline-offset-2 hover:no-underline">
                     {mode === 'signup' ? 'Already have an account? Sign in' : 'Back to sign in'}
                   </button>
                 )}
@@ -209,7 +210,9 @@ export default function AuthScreen({ initialMode = 'signin', onPasswordReset }) 
             </form>
           )}
         </section>
-        <p className="mt-4 text-center text-xs text-slate-600">
+        <p className="mt-4 flex flex-wrap items-center justify-center gap-3 text-center text-xs text-slate-600">
+          {/* Text size and theme are available before signing in, too. */}
+          <SettingsButton settings={settings} onChange={onSettingsChange} />
           <a href="#/accessibility" className="inline-flex min-h-[24px] items-center rounded underline underline-offset-2 hover:no-underline">Accessibility statement</a>
         </p>
       </div>

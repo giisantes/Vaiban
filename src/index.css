@@ -2,6 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Settings (D59, D60) -------------------------------------------------------
+   Text size: everything is sized in rem, so changing the root font size
+   scales the whole app. 16px root = the standard size, where the smallest
+   text is 14pt. Chosen in Settings and stored on <html data-text-size>. */
+html { font-size: 16px; }
+html[data-text-size='smaller'] { font-size: 13.714px; }  /* smallest text 12pt */
+html[data-text-size='larger']  { font-size: 18.286px; }  /* smallest text 16pt */
+
+/* Theme: colour values as "R G B" so Tailwind's opacity modifiers work.
+   Light is the default; dark applies when the system asks for it (unless the
+   user picked Light), or when the user picked Dark – <html data-theme>. */
+:root {
+  color-scheme: light;
+  --slate-50: 248 250 252;  --slate-100: 241 245 249; --slate-200: 226 232 240;
+  --slate-300: 203 213 225; --slate-400: 148 163 184; --slate-500: 100 116 139;
+  --slate-600: 71 85 105;   --slate-700: 51 65 85;    --slate-800: 30 41 59;
+  --slate-900: 15 23 42;    --slate-950: 2 6 23;
+  --surface: 255 255 255;   --highlight: 227 234 243; --link: 35 70 110;
+  --brand-primary: 35 70 110;
+  --feature: 47 95 168;     --feature-soft: 230 238 250;
+  --bug: 179 38 45;         --bug-soft: 251 229 230;
+  --due-safe: 47 107 85;    --due-safe-soft: 231 242 236;
+  --due-warning: 138 90 0;  --due-warning-soft: 253 241 214;
+  --due-overdue: 163 36 43; --due-overdue-soft: 251 230 231; --due-overdue-on: 255 255 255;
+  --due-neutral: 91 104 120; --due-neutral-soft: 238 241 244;
+}
+
+/* Dark values, checked for WCAG AA contrast (every text pair ≥ 4.5:1). */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --slate-50: 10 15 28;     --slate-100: 17 24 39;    --slate-200: 39 50 68;
+  --slate-300: 58 71 92;    --slate-400: 100 116 139; --slate-500: 148 163 184;
+  --slate-600: 176 188 204; --slate-700: 203 213 225; --slate-800: 226 232 240;
+  --slate-900: 241 245 249; --slate-950: 248 250 252;
+  --surface: 24 32 48;      --highlight: 29 53 87;    --link: 156 194 240;
+  --brand-primary: 62 109 170;
+  --feature: 141 182 245;   --feature-soft: 28 44 71;
+  --bug: 243 153 155;       --bug-soft: 61 26 29;
+  --due-safe: 127 209 174;  --due-safe-soft: 21 48 42;
+  --due-warning: 242 194 107; --due-warning-soft: 58 44 14;
+  --due-overdue: 245 154 159; --due-overdue-soft: 63 22 25; --due-overdue-on: 42 10 12;
+  --due-neutral: 182 194 210; --due-neutral-soft: 36 48 65;
+}
+
+/* System default: follow the device's setting unless the user picked Light. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --slate-50: 10 15 28;     --slate-100: 17 24 39;    --slate-200: 39 50 68;
+    --slate-300: 58 71 92;    --slate-400: 100 116 139; --slate-500: 148 163 184;
+    --slate-600: 176 188 204; --slate-700: 203 213 225; --slate-800: 226 232 240;
+    --slate-900: 241 245 249; --slate-950: 248 250 252;
+    --surface: 24 32 48;      --highlight: 29 53 87;    --link: 156 194 240;
+    --brand-primary: 62 109 170;
+    --feature: 141 182 245;   --feature-soft: 28 44 71;
+    --bug: 243 153 155;       --bug-soft: 61 26 29;
+    --due-safe: 127 209 174;  --due-safe-soft: 21 48 42;
+    --due-warning: 242 194 107; --due-warning-soft: 58 44 14;
+    --due-overdue: 245 154 159; --due-overdue-soft: 63 22 25; --due-overdue-on: 42 10 12;
+    --due-neutral: 182 194 210; --due-neutral-soft: 36 48 65;
+  }
+}
+
+
 html, body, #root {
   height: 100%;
 }
@@ -9,8 +73,8 @@ html, body, #root {
 body {
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background-color: #f8fafc; /* slate-50 */
-  color: #0f172a;            /* slate-900 */
+  background-color: rgb(var(--slate-50));
+  color: rgb(var(--slate-900));
 }
 
 /* Accessibility pass ------------------------------------------------------ */
@@ -18,7 +82,7 @@ body {
 /* A clear focus outline on anything reached by keyboard, even where a
    component forgot to style it (WCAG 2.2 SC 2.4.7 Focus Visible). */
 :focus-visible {
-  outline: 2px solid #23466E;
+  outline: 2px solid rgb(var(--brand-primary));
   outline-offset: 2px;
 }
 

@@ -31,7 +31,7 @@ export default function ProjectsHome({ projects, tasks, today, onOpen, onCreate 
   };
 
   return (
-    <div className="grid gap-6">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
       <div>
         <h1 className="text-2xl font-semibold text-slate-900">Your projects</h1>
         <p className="text-sm text-slate-600">Pick a project to open its board.</p>
@@ -40,7 +40,7 @@ export default function ProjectsHome({ projects, tasks, today, onOpen, onCreate 
       {projects.length === 0 ? (
         <p className="rounded-md border border-dashed border-slate-300 p-4 text-sm text-slate-600">No projects yet. Add one below.</p>
       ) : (
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] gap-4">
           {projects.map((project) => {
             const mine = tasks.filter((t) => t.projectId === project.id);
             const overdue = mine.filter((t) => dueState(t, today).state === 'overdue').length;
@@ -51,11 +51,11 @@ export default function ProjectsHome({ projects, tasks, today, onOpen, onCreate 
                 <button
                   type="button"
                   onClick={() => onOpen(project.id)}
-                  className="group grid h-full w-full content-start gap-3 rounded-lg border border-slate-200 bg-white p-4 text-left hover:border-slate-400 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                  className="group grid h-full w-full min-w-0 content-start gap-3 rounded-lg border border-slate-200 bg-surface p-4 text-left hover:border-slate-400 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                 >
-                  <span className="flex items-start justify-between gap-2">
+                  <span className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
                     <span className="text-base font-semibold text-slate-900 [overflow-wrap:anywhere]">{project.name}</span>
-                    <span aria-hidden="true" className="shrink-0 text-sm font-medium text-brand-primary group-hover:underline">Open board →</span>
+                    <span aria-hidden="true" className="shrink-0 text-sm font-medium text-link group-hover:underline">Open board →</span>
                   </span>
                   {project.description && <span className="text-sm text-slate-600">{project.description}</span>}
 
@@ -66,11 +66,11 @@ export default function ProjectsHome({ projects, tasks, today, onOpen, onCreate 
                       </span>
                     ))}
                     {overdue > 0 && (
-                      <span className="rounded bg-due-overdue px-1.5 py-0.5 font-semibold text-white">{overdue} overdue</span>
+                      <span className="rounded bg-due-overdue px-1.5 py-0.5 font-semibold text-due-overdue-on">{overdue} overdue</span>
                     )}
                   </span>
 
-                  <span className="flex items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs text-slate-600">
+                  <span className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs text-slate-600">
                     <span className="flex items-center gap-1.5">
                       <span aria-hidden="true" className="flex gap-0.5">
                         {project.anchors.map((a) => (
@@ -95,7 +95,7 @@ export default function ProjectsHome({ projects, tasks, today, onOpen, onCreate 
         </ul>
       )}
 
-      <form onSubmit={submit} noValidate className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-[1fr_2fr_auto] sm:items-end">
+      <form onSubmit={submit} noValidate className="grid gap-3 rounded-lg border border-slate-200 bg-surface p-4 sm:grid-cols-[1fr_2fr_auto] sm:items-end">
         <h2 className="text-sm font-semibold text-slate-900 sm:col-span-3">New project</h2>
         <label className="grid gap-1 text-sm font-medium text-slate-700">
           <span>Name (required)</span>

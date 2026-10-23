@@ -34,7 +34,7 @@ export default function ContextSection({ context, contextTool, contextUpdatedAt,
         onChange={(e) => onChange('context', e.target.value)}
         rows={9}
         aria-describedby="context-help context-updated"
-        className={`${inputClass} font-mono text-[13px] leading-relaxed`}
+        className={`${inputClass} font-mono text-sm leading-relaxed`}
       />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <label className="grid gap-1 text-sm font-medium text-slate-700">

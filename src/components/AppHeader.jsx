@@ -1,5 +1,6 @@
 import { displayName } from '../lib/auth.js';
 import Avatar from './Avatar.jsx';
+import SettingsButton from './SettingsButton.jsx';
 
 const SAVE_TEXT = {
   saving: 'Saving…',
@@ -21,12 +22,13 @@ const SAVE_TEXT = {
  *   onSignOut?: () => void,
  *   saveStatus?: 'saving' | 'saved' | 'error',
  *   isCloud?: boolean,
+ *   settings: object, onSettingsChange: (changes: object) => void,  // D60
  * }} props
  *
  * Accounts: shows who is signed in, a Sign out button, and whether the
  * latest change has reached the server ("All changes saved").
  */
-export default function AppHeader({ project, onHome, onNewTask, user, onSignOut, saveStatus = 'saved', isCloud }) {
+export default function AppHeader({ project, onHome, onNewTask, user, onSignOut, saveStatus = 'saved', isCloud, settings, onSettingsChange }) {
   const name = displayName(user);
   return (
     <header className="mb-4 flex flex-wrap items-center justify-between gap-4">
@@ -40,8 +42,8 @@ export default function AppHeader({ project, onHome, onNewTask, user, onSignOut,
           {/* three sticky-note columns */}
           <span aria-hidden="true" className="flex h-7 items-end gap-0.5 rounded bg-brand-primary p-1">
             <i className="block h-4 w-1.5 rounded-sm bg-brand-accent" />
-            <i className="block h-2.5 w-1.5 rounded-sm bg-white" />
-            <i className="block h-3.5 w-1.5 rounded-sm bg-white/70" />
+            <i className="block h-2.5 w-1.5 rounded-sm bg-surface" />
+            <i className="block h-3.5 w-1.5 rounded-sm bg-surface/70" />
           </span>
           Vibeboard
         </a>
@@ -53,7 +55,7 @@ export default function AppHeader({ project, onHome, onNewTask, user, onSignOut,
                 <a
                   href="#/"
                   onClick={(e) => { e.preventDefault(); onHome(); }}
-                  className="inline-flex min-h-[24px] items-center rounded px-0.5 text-brand-primary underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                  className="inline-flex min-h-[24px] items-center rounded px-0.5 text-link underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                 >
                   Projects
                 </a>
@@ -71,6 +73,8 @@ export default function AppHeader({ project, onHome, onNewTask, user, onSignOut,
         <p role="status" className={`text-xs ${saveStatus === 'error' ? 'font-semibold text-due-overdue' : 'text-slate-600'}`}>
           {isCloud ? SAVE_TEXT[saveStatus] : 'Saved in this browser only'}
         </p>
+
+        <SettingsButton settings={settings} onChange={onSettingsChange} />
 
         {user && (
           <div className="flex items-center gap-2 border-l border-slate-300 pl-3">

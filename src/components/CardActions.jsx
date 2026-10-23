@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { STAGES, TEAM } from '../constants.js';
+import { STAGES } from '../constants.js';
 import { useDismiss } from '../hooks/useDismiss.js';
+import { usePeople } from '../lib/people.js';
 import Avatar from './Avatar.jsx';
 import CopyContextButton from './CopyContextButton.jsx';
 
@@ -50,7 +51,7 @@ export default function CardActions({ task, onHandOff, onMove, onCopied }) {
   }, [open]);
 
   const owner = task.assignee || 'Unassigned';
-  const people = TEAM.filter((name) => name !== task.assignee);
+  const people = usePeople().filter((name) => name !== task.assignee);
   const stages = STAGES.filter((s) => s.id !== task.status);
   const listId = `card-${task.id}-${open}`;
   const toggle = (which) => setOpen((o) => (o === which ? null : which));
@@ -109,6 +110,9 @@ export default function CardActions({ task, onHandOff, onMove, onCopied }) {
             {open === 'owner' ? 'Assign to' : 'Move to'}
           </p>
           <ul aria-labelledby={`${listId}-label`} className="grid gap-0.5">
+            {open === 'owner' && people.length === 0 && (
+              <li className="px-2 py-1.5 text-sm text-slate-600">No one else is on this board yet. Use Share to invite people.</li>
+            )}
             {open === 'owner'
               ? people.map((name) => (
                   <li key={name}>

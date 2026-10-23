@@ -1,9 +1,11 @@
--- Vibeboard database setup. Run this once in Supabase → SQL Editor → New query.
+-- Vaiban database setup. Run this once in Supabase → SQL Editor → New query.
+--
+-- Then run migrations/002_allow_settings.sql and migrations/003_shared_boards.sql.
 --
 -- One table holds each user's saved data as JSON:
---   key = 'projects' → the list of projects (with their deliverable links)
---   key = 'tasks'    → every task on every board
 --   key = 'settings' → text size and theme (D60)
+--   key = 'projects' / 'tasks' → used before shared boards; 003 moves them into
+--                    the boards and tasks tables and the app no longer reads them
 --
 -- Row-level security (RLS) is what keeps accounts apart: the database itself
 -- only ever lets a signed-in user see or change rows where user_id is their

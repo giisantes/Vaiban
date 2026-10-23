@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { STAGES, TEAM, TASK_TYPES } from '../constants.js';
+import { STAGES, TASK_TYPES } from '../constants.js';
+import { usePeople } from '../lib/people.js';
 import { typeStyle } from '../lib/typeStyles.js';
 import ContextSection from './ContextSection.jsx';
 import CopyContextButton from './CopyContextButton.jsx';
@@ -51,6 +52,7 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose, toda
   const [form, setForm] = useState(task);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [mode, setMode] = useState('view'); // 'view' | 'edit'
+  const people = usePeople();
 
   // Load the task into the form each time the modal opens with a task.
   // Existing tasks open in view mode; new ones go straight to the form.
@@ -177,7 +179,7 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose, toda
               <span>Assignee</span>
               <select id="task-assignee" value={form.assignee} onChange={set('assignee')} className={inputClass}>
                 <option value="">Unassigned</option>
-                {TEAM.map((name) => (
+                {[...people, ...(form.assignee && !people.includes(form.assignee) ? [form.assignee] : [])].map((name) => (
                   <option key={name} value={name}>{name}</option>
                 ))}
               </select>

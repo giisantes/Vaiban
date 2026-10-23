@@ -99,7 +99,7 @@ Three lines of microcopy that capture the tone of the product. Keep it short —
 
 The tracker probably doesn't need a logo, but it does need a name and a wordmark style.
 
-- **Product name:** Vibeboard
+- **Product name:** Vaiban – "vai" from the *vibe* in vibe coding, "ban" from kan*ban*. (Called Vibeboard until 23 Oct.)
 - **Wordmark style:** The name in Bricolage Grotesque, text-primary colour, beside a small brand-accent sticky-note square.
 
 ## 7. Out of scope (this hackathon)

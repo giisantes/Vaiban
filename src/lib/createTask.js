@@ -16,6 +16,9 @@ import { DEFAULT_PROJECT_ID, STAGES } from '../constants.js';
  * @property {string} context           M9: Markdown briefing for the next AI / teammate
  * @property {string|null} contextTool  M9: one of AI_TOOLS, or null
  * @property {string|null} contextUpdatedAt  M9: ISO timestamp, set automatically on save
+ * @property {number} order             position in its column (lower = higher up). Set when a
+ *                                      task is made or moved, so the order is the same on every
+ *                                      teammate's screen (D63). Older tasks without one sort first.
  */
 
 /** Today's date as ISO 'YYYY-MM-DD' (local time). */
@@ -51,6 +54,7 @@ export function createTask(fields = {}) {
     context: '',
     contextTool: null,
     contextUpdatedAt: null,
+    order: Date.now(),
     ...fields,
   };
   if (!STAGES.some((s) => s.id === task.status)) {
@@ -60,6 +64,11 @@ export function createTask(fields = {}) {
     throw new Error(`Unknown type "${task.type}"`);
   }
   return task;
+}
+
+/** Sorts a column's tasks by `order`, keeping the list order for ties. */
+export function byOrder(a, b) {
+  return (a.order ?? 0) - (b.order ?? 0);
 }
 
 /**

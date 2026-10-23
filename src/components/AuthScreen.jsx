@@ -59,7 +59,7 @@ function Logo() {
         <i className="block h-3 w-1.5 rounded-sm bg-surface" />
         <i className="block h-4 w-1.5 rounded-sm bg-surface/70" />
       </span>
-      Vibeboard
+      Vaiban
     </div>
   );
 }
@@ -81,9 +81,10 @@ const TITLES = {
  * blocked (WCAG 2.2 SC 3.3.8 Accessible Authentication, SC 1.3.5 Identify
  * Input Purpose). Errors are announced (role="alert").
  *
- * @param {{ initialMode?: keyof TITLES, onPasswordReset?: () => void }} props
+ * @param {{ initialMode?: keyof TITLES, onPasswordReset?: () => void, joining?: boolean }} props
+ *   joining: arrived from a board invite link (D62) – say so, so the sign-in isn't a surprise.
  */
-export default function AuthScreen({ initialMode = 'signin', onPasswordReset, settings, onSettingsChange }) {
+export default function AuthScreen({ initialMode = 'signin', onPasswordReset, settings, onSettingsChange, joining = false }) {
   const [mode, setMode] = useState(initialMode);
   const [form, setForm] = useState({ name: '', username: '', email: '', password: '' });
   const [error, setError] = useState('');
@@ -92,7 +93,7 @@ export default function AuthScreen({ initialMode = 'signin', onPasswordReset, se
   const [notice, setNotice] = useState('');
 
   useEffect(() => {
-    document.title = `${TITLES[mode]} – Vibeboard`;
+    document.title = `${TITLES[mode]} – Vaiban`;
   }, [mode]);
 
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
@@ -149,6 +150,11 @@ export default function AuthScreen({ initialMode = 'signin', onPasswordReset, se
         <Logo />
         <section aria-labelledby="auth-title" className="mt-6 grid gap-4 rounded-lg border border-slate-200 bg-surface p-6 shadow-sm">
           <h1 id="auth-title" className="text-lg font-semibold text-slate-900">{TITLES[mode]}</h1>
+          {joining && (mode === 'signin' || mode === 'signup') && (
+            <p className="rounded-md bg-highlight px-3 py-2 text-sm text-slate-900">
+              You've been invited to a board. Sign in, or create an account, and you'll be taken back to the invitation.
+            </p>
+          )}
 
           {mode === 'check-email' ? (
             <div className="grid gap-3 text-sm text-slate-700">
@@ -210,11 +216,12 @@ export default function AuthScreen({ initialMode = 'signin', onPasswordReset, se
             </form>
           )}
         </section>
-        <p className="mt-4 flex flex-wrap items-center justify-center gap-3 text-center text-xs text-slate-600">
+        {/* div, not p: the Settings window (a <dialog>) can't sit inside a paragraph */}
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-center text-xs text-slate-600">
           {/* Text size and theme are available before signing in, too. */}
           <SettingsButton settings={settings} onChange={onSettingsChange} />
           <a href="#/accessibility" className="inline-flex min-h-[24px] items-center rounded underline underline-offset-2 hover:no-underline">Accessibility statement</a>
-        </p>
+        </div>
       </div>
     </main>
   );

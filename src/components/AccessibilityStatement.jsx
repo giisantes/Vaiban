@@ -8,16 +8,16 @@ import { useEffect } from 'react';
  */
 export default function AccessibilityStatement() {
   useEffect(() => {
-    document.title = 'Accessibility statement – Vibeboard';
+    document.title = 'Accessibility statement – Vaiban';
   }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
       <main className="mx-auto grid max-w-2xl gap-5 text-sm leading-relaxed text-slate-800">
-        <a href="#/" className="inline-flex min-h-[24px] items-center justify-self-start rounded py-1 text-link underline underline-offset-2 hover:no-underline">← Back to Vibeboard</a>
+        <a href="#/" className="inline-flex min-h-[24px] items-center justify-self-start rounded py-1 text-link underline underline-offset-2 hover:no-underline">← Back to Vaiban</a>
         <h1 className="text-2xl font-semibold text-slate-900">Accessibility statement</h1>
         <p>
-          Vibeboard aims to be usable by everyone, including people who use a keyboard instead of a mouse, a screen
+          Vaiban aims to be usable by everyone, including people who use a keyboard instead of a mouse, a screen
           reader, screen magnification or zoom, or who see colours differently. We aim to meet the Web Content
           Accessibility Guidelines (WCAG) 2.2 at level AA.
         </p>
@@ -49,7 +49,7 @@ export default function AccessibilityStatement() {
         <section className="grid gap-2">
           <h2 className="text-lg font-semibold text-slate-900">Known problems</h2>
           <ul className="list-disc space-y-1 pl-5">
-            <li>We have not yet tested Vibeboard with disabled users or with every screen reader. This is planned.</li>
+            <li>We have not yet tested Vaiban with disabled users or with every screen reader. This is planned.</li>
             <li>Cards can't be put in a particular order within a column yet – a moved card goes to the bottom.</li>
             <li>The Context field shows Markdown as plain text, not formatted.</li>
           </ul>

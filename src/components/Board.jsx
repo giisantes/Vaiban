@@ -1,3 +1,4 @@
+import { byOrder } from '../lib/createTask.js';
 import { useState } from 'react';
 import { STAGES } from '../constants.js';
 import Column from './Column.jsx';
@@ -29,7 +30,7 @@ export default function Board({ tasks, onOpenTask, onHandOff, onMoveTask, highli
         <Column
           key={stage.id}
           stage={stage}
-          tasks={tasks.filter((task) => task.status === stage.id)}
+          tasks={tasks.filter((task) => task.status === stage.id).sort(byOrder)}
           onOpenTask={onOpenTask}
           onHandOff={onHandOff}
           onMoveTask={onMoveTask}

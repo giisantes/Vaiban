@@ -11,12 +11,14 @@ import Avatar from './Avatar.jsx';
  * @param {{
  *   projects: import('../lib/projects.js').Project[],
  *   tasks: import('../lib/createTask.js').Task[],
+ *   children?: React.ReactNode,   // D62: invitations, shown under the heading
+ *   members?: object[],   // D62: board_members rows (shared boards); [] in browser-only mode
  *   today: string,
  *   onOpen: (projectId: string) => void,
  *   onCreate: (fields: { name: string, description: string }) => void,
  * }} props
  */
-export default function ProjectsHome({ projects, tasks, today, onOpen, onCreate }) {
+export default function ProjectsHome({ projects, tasks, members = [], today, onOpen, onCreate, children }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState(false);
@@ -37,6 +39,8 @@ export default function ProjectsHome({ projects, tasks, today, onOpen, onCreate 
         <p className="text-sm text-slate-600">Pick a project to open its board.</p>
       </div>
 
+      {children}
+
       {projects.length === 0 ? (
         <p className="rounded-md border border-dashed border-slate-300 p-4 text-sm text-slate-600">No projects yet. Add one below.</p>
       ) : (
@@ -45,7 +49,12 @@ export default function ProjectsHome({ projects, tasks, today, onOpen, onCreate 
             const mine = tasks.filter((t) => t.projectId === project.id);
             const overdue = mine.filter((t) => dueState(t, today).state === 'overdue').length;
             const linked = project.anchors.filter((a) => a.url).length;
-            const owners = [...new Set(mine.map((t) => t.assignee).filter(Boolean))];
+            const onBoard = members.filter((m) => m.board_id === project.id);
+            const waiting = project.isOwner ? onBoard.filter((m) => m.status === 'pending').length : 0;
+            // Shared boards show their members; browser-only boards show whoever has tasks.
+            const owners = onBoard.length
+              ? onBoard.filter((m) => m.status === 'active').map((m) => m.display_name).filter(Boolean)
+              : [...new Set(mine.map((t) => t.assignee).filter(Boolean))];
             return (
               <li key={project.id}>
                 <button
@@ -58,6 +67,16 @@ export default function ProjectsHome({ projects, tasks, today, onOpen, onCreate 
                     <span aria-hidden="true" className="shrink-0 text-sm font-medium text-link group-hover:underline">Open board →</span>
                   </span>
                   {project.description && <span className="text-sm text-slate-600">{project.description}</span>}
+                  {(project.isOwner === false || waiting > 0) && (
+                    <span className="flex flex-wrap gap-1.5 text-xs">
+                      {project.isOwner === false && (
+                        <span className="rounded bg-highlight px-1.5 py-0.5 font-medium text-slate-800">Shared by {project.ownerName || 'someone'}</span>
+                      )}
+                      {waiting > 0 && (
+                        <span className="rounded bg-brand-accent px-1.5 py-0.5 font-semibold text-[#0F172A]">{waiting} waiting to join</span>
+                      )}
+                    </span>
+                  )}
 
                   <span className="flex flex-wrap gap-1.5 text-xs">
                     {STAGES.map((stage) => (

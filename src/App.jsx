@@ -3,6 +3,7 @@ import { useAuth } from './hooks/useAuth.js';
 import { useHash } from './hooks/useHash.js';
 import { useSettings } from './hooks/useSettings.js';
 import { signOut } from './lib/auth.js';
+import { joinTokenFromHash, rememberJoinToken } from './lib/joinToken.js';
 import { applySettings, readLocalSettings } from './lib/settings.js';
 import { cloudStore, localStore } from './lib/storage.js';
 import { configError, supabase } from './lib/supabase.js';
@@ -16,7 +17,7 @@ import Workspace from './components/Workspace.jsx';
 applySettings(readLocalSettings());
 
 /**
- * Vibeboard – the entry point decides what to show:
+ * Vaiban – the entry point decides what to show:
  *
  *   #/accessibility                          → the accessibility statement (signed in or not)
  *   accounts not set up (no Supabase keys) → the board, saved in this browser
@@ -53,7 +54,12 @@ export default function App() {
     // key: start the screen afresh in "reset" mode, even if it was already showing
     return <AuthScreen key="reset" initialMode="reset" onPasswordReset={auth.doneRecovering} {...settingsProps} />;
   }
-  if (!auth.session) return <AuthScreen key="auth" {...settingsProps} />;
+  if (!auth.session) {
+    // D62: opened an invite link while signed out – keep it for after sign-in.
+    const joinToken = joinTokenFromHash(hash);
+    if (joinToken) rememberJoinToken(joinToken);
+    return <AuthScreen key="auth" joining={Boolean(joinToken)} {...settingsProps} />;
+  }
 
   // key: a different user gets a completely fresh workspace (no leftover state)
   return <Workspace key={userId} store={store} user={auth.user} onSignOut={signOut} {...settingsProps} />;

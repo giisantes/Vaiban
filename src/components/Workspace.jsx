@@ -1,10 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CONTEXT_TEMPLATE, STAGES } from '../constants.js';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CONTEXT_TEMPLATE, STAGES, TEAM } from '../constants.js';
+import { useCloudBoards } from '../hooks/useCloudBoards.js';
+import { useHash } from '../hooks/useHash.js';
 import { useHashRoute } from '../hooks/useHashRoute.js';
 import { useStoredState } from '../hooks/useStoredState.js';
 import { useToday } from '../hooks/useToday.js';
 import { useUndo } from '../hooks/useUndo.js';
 import { createTask, withTaskDefaults } from '../lib/createTask.js';
+import { joinTokenFromHash, takeJoinToken } from '../lib/joinToken.js';
+import { PeopleContext } from '../lib/people.js';
 import { createProject, seedProjects } from '../lib/projects.js';
 import { readLocalData } from '../lib/storage.js';
 import { seedTasks } from '../data/seedTasks.js';
@@ -16,6 +20,9 @@ import ProjectsHome from './ProjectsHome.jsx';
 import TaskModal from './TaskModal.jsx';
 import Toast from './Toast.jsx';
 import ImportBanner from './ImportBanner.jsx';
+import InvitationsPanel from './InvitationsPanel.jsx';
+import JoinBoard from './JoinBoard.jsx';
+import ShareDialog from './ShareDialog.jsx';
 
 /**
  * The signed-in workspace: home page + project boards (was App.jsx).
@@ -38,6 +45,11 @@ import ImportBanner from './ImportBanner.jsx';
  *   lib/storage.js            where data is saved: this browser, or the user's
  *                             cloud account (Adapter pattern)
  *   lib/auth.js, hooks/useAuth.js  accounts (Supabase)
+ *   hooks/useCloudBoards.js   shared boards: row-by-row saving + live updates (D62–D63)
+ *   lib/boardsApi.js          every database call for boards and sharing (Facade)
+ *   lib/diff.js               what changed between two lists (saving, undo)
+ *   lib/people.js             PeopleContext: who tasks can be assigned to (D64)
+ *   components/ShareDialog, JoinBoard, InvitationsPanel   sharing screens (D62)
  *   data/seedTasks.js         mock tasks for first load
  *   components/               Board → Column → TaskCard, TaskModal, Toast, …
  *
@@ -56,22 +68,71 @@ import ImportBanner from './ImportBanner.jsx';
  *   settings: { textSize: string, theme: string },   // display settings (D60)
  *   onSettingsChange: (changes: object) => void,
  * }} props
+ *
+ * Where the boards come from depends on the mode (D62): browser-only mode
+ * keeps the original two lists in localStorage; with an account they are the
+ * shared boards in the database (hooks/useCloudBoards.js). Both hand the view
+ * the same shape of data, so the board components don't know the difference.
  */
-export default function Workspace({ store, user, onSignOut, settings, onSettingsChange }) {
+export default function Workspace(props) {
+  return props.store.kind === 'cloud' ? <CloudWorkspace {...props} /> : <LocalWorkspace {...props} />;
+}
+
+function LocalWorkspace(props) {
+  const { store } = props;
+  // M4 data-model: the demo data is only used when nothing is saved yet.
+  const [projects, setProjects, projectsStatus, retryProjects] = useStoredState(store, 'projects', seedProjects);
+  const [tasks, setTasks, tasksStatus, retryTasks] = useStoredState(store, 'tasks', seedTasks);
+  const statuses = [projectsStatus, tasksStatus];
+  const data = {
+    loaded: projects !== undefined && tasks !== undefined,
+    loadError: statuses.includes('load-error'),
+    retry: () => { retryProjects(); retryTasks(); },
+    projects: projects ?? [],
+    tasks: tasks ?? [],
+    setProjects,
+    setTasks,
+    saveStatus: statuses.includes('error') ? 'error' : statuses.includes('saving') ? 'saving' : 'saved',
+    members: [],
+    invitations: [],
+    requests: [],
+    sharing: null,
+  };
+  return <WorkspaceView {...props} data={data} />;
+}
+
+function CloudWorkspace(props) {
+  // Messages about things other people did (someone asked to join, you were
+  // let in…) go to the view's toast once it has registered itself here.
+  const notify = useRef(() => {});
+  const data = useCloudBoards(props.user, (message) => notify.current(message));
+  return <WorkspaceView {...props} data={data} notify={notify} />;
+}
+
+function WorkspaceView({ store, user, onSignOut, settings, onSettingsChange, data, notify }) {
   const isCloud = store.kind === 'cloud';
-  // Browser-only mode starts with the demo data; a new account starts empty.
-  const [storedProjects, setProjects, projectsStatus, retryProjects] = useStoredState(store, 'projects', isCloud ? () => [] : seedProjects);
-  // M4 data-model: the mock tasks are only used when nothing is saved yet.
-  const [storedTasks, setTasks, tasksStatus, retryTasks] = useStoredState(store, 'tasks', isCloud ? () => [] : seedTasks);
-  const loaded = storedProjects !== undefined && storedTasks !== undefined;
-  const projects = storedProjects ?? [];
+  const { loaded, projects, setProjects, setTasks, sharing } = data;
 
   // Home page: which project is open (null = the projects list), kept in the URL hash.
   const [projectId, navigate] = useHashRoute();
   const project = projects.find((p) => p.id === projectId) ?? null;
+  const hash = useHash();
+  const joinToken = isCloud ? joinTokenFromHash(hash) : null;
 
   // M9: tasks saved before the context fields existed get their defaults.
-  const tasks = useMemo(() => (storedTasks ?? []).map(withTaskDefaults), [storedTasks]);
+  const tasks = useMemo(() => data.tasks.map(withTaskDefaults), [data.tasks]);
+  // The latest list, for changes made in quick succession before a re-render.
+  const tasksRef = useRef(data.tasks);
+  tasksRef.current = data.tasks;
+
+  // D64: who tasks can be assigned to – this board's members, or the placeholder team.
+  const boardMembers = useMemo(() => data.members.filter((m) => m.board_id === projectId), [data.members, projectId]);
+  const people = useMemo(
+    () => (isCloud ? boardMembers.filter((m) => m.status === 'active').map((m) => m.display_name).filter(Boolean) : TEAM),
+    [isCloud, boardMembers]
+  );
+  const waitingCount = project?.isOwner ? boardMembers.filter((m) => m.status === 'pending').length : 0;
+  const [shareOpen, setShareOpen] = useState(false);
 
   // M5 crud-modal: the task open in the modal (null = closed). Clicking a
   // card opens it read-only; the modal's "Edit task" button switches to the form.
@@ -79,13 +140,14 @@ export default function Workspace({ store, user, onSignOut, settings, onSettings
   const isNew = editing ? !tasks.some((t) => t.id === editing.id) : false;
 
   // M12: undo history for the task list (Memento – see hooks/useUndo.js).
-  const history = useUndo(storedTasks ?? [], setTasks);
+  const history = useUndo(setTasks);
 
   // M7 task-owner: confirmation message + which card to highlight briefly.
   // A toast is { message, action? } – M12 adds the Undo action.
   const [toast, setToast] = useState(null);
   const [highlightId, setHighlightId] = useState(null);
   const clearToast = useCallback(() => setToast(null), []);
+  if (notify) notify.current = (message) => setToast({ message });
 
   // M8 due-tint: today's date, updated automatically so colours move on by themselves.
   const today = useToday();
@@ -107,8 +169,11 @@ export default function Workspace({ store, user, onSignOut, settings, onSettings
   // M12: every change to the task list goes through here, so it can be undone.
   // `label` says what the change was, e.g. 'moving "Fix login" to Review'.
   const change = (label, updater) => {
-    history.record(label);
-    setTasks(updater);
+    const prev = tasksRef.current;
+    const next = updater(prev);
+    history.record(label, prev, next);
+    tasksRef.current = next;
+    setTasks(next);
   };
 
   const undo = useCallback(() => {
@@ -166,7 +231,7 @@ export default function Workspace({ store, user, onSignOut, settings, onSettings
     if (!task || task.status === status) return;
     change(`moving "${task.title}" to ${stageLabel(status)}`, (prev) => [
       ...prev.filter((t) => t.id !== id),
-      { ...prev.find((t) => t.id === id), status },
+      { ...prev.find((t) => t.id === id), status, order: Date.now() }, // D63: bottom of the new column, for everyone
     ]);
     undoableToast(`Moved "${task.title}" to ${stageLabel(status)}.`);
     setHighlightId(id);
@@ -179,13 +244,14 @@ export default function Workspace({ store, user, onSignOut, settings, onSettings
     if (!focusTaskId) return;
     document.querySelector(`[data-task-id="${focusTaskId}"] h3 button`)?.focus();
     setFocusTaskId(null);
-  }, [focusTaskId, storedTasks]);
+  }, [focusTaskId, data.tasks]);
 
   // Each screen has its own page title, so screen-reader users and browser
   // tabs say where you are (WCAG 2.2 SC 2.4.2 Page Titled).
   useEffect(() => {
-    document.title = project ? `${project.name} – Vibeboard` : 'Your projects – Vibeboard';
-  }, [project]);
+    if (joinToken) return; // the join screen sets its own
+    document.title = project ? `${project.name} – Vaiban` : 'Your projects – Vaiban';
+  }, [project, joinToken]);
 
   /** "Skip to main content" – jumps past the header and the Deliverables strip. */
   const skipToMain = (e) => {
@@ -213,14 +279,43 @@ export default function Workspace({ store, user, onSignOut, settings, onSettings
     setToast({ message: `Created "${created.name}". Add its first task with + Task.` });
   };
 
+  // D62: board details and membership (Share window).
+  const renameBoard = (fields) => setProjects((prev) => prev.map((p) => (p.id === project.id ? { ...p, ...fields } : p)));
+  const deleteBoard = () => {
+    const name = project.name;
+    setShareOpen(false);
+    setProjects((prev) => prev.filter((p) => p.id !== project.id));
+    setTasks((prev) => prev.filter((t) => t.projectId !== project.id));
+    navigate(null);
+    setToast({ message: `Deleted "${name}".` });
+  };
+  const leaveBoard = async () => {
+    const name = project.name;
+    try {
+      await sharing.leave(project.id);
+      setShareOpen(false);
+      navigate(null);
+      setToast({ message: `You left "${name}".` });
+    } catch {
+      setToast({ message: `Couldn't leave "${name}". Check your internet connection and try again.` });
+    }
+  };
+
+  // D62: an invite link opened before signing in – carry on where they left off.
+  useEffect(() => {
+    if (!isCloud) return;
+    const remembered = takeJoinToken(); // read once, then forgotten
+    if (remembered && !joinToken) window.location.hash = `/join/${remembered}`;
+  }, [isCloud]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // A link to a project that no longer exists falls back to the home page.
   useEffect(() => {
     if (loaded && projectId && !project) navigate(null);
   }, [loaded, projectId, project, navigate]);
+  useEffect(() => { if (!project) setShareOpen(false); }, [project]);
 
   // Overall save status for the header, and a warning before leaving with unsaved changes.
-  const statuses = [projectsStatus, tasksStatus];
-  const saveStatus = statuses.includes('error') ? 'error' : statuses.includes('saving') ? 'saving' : 'saved';
+  const saveStatus = data.saveStatus;
   useEffect(() => {
     if (saveStatus === 'saved') return;
     const warn = (e) => { e.preventDefault(); e.returnValue = ''; };
@@ -240,17 +335,26 @@ export default function Workspace({ store, user, onSignOut, settings, onSettings
     try { window.localStorage.setItem(dismissKey, '1'); } catch { /* ignore */ }
   };
   const importLocal = () => {
-    setProjects(localData.projects ?? seedProjects());
-    setTasks(localData.tasks);
+    // Shared boards need real (UUID) ids, so imported projects get new ones
+    // and their tasks follow them.
+    const ids = new Map();
+    const imported = (localData.projects ?? seedProjects()).map((p) => {
+      const id = createProject().id;
+      ids.set(p.id, id);
+      return { ...p, id };
+    });
+    const fallback = imported[0]?.id;
+    setProjects((prev) => [...prev, ...imported]);
+    setTasks((prev) => [...prev, ...localData.tasks.map((t) => ({ ...withTaskDefaults(t), projectId: ids.get(withTaskDefaults(t).projectId) ?? fallback }))]);
     dismissImport();
     setToast({ message: `Imported ${localData.tasks.length} tasks into your account.` });
   };
 
-  if (projectsStatus === 'load-error' || tasksStatus === 'load-error') {
+  if (data.loadError) {
     return (
       <FullPageMessage>
         <p>Couldn't load your projects. Check your internet connection.</p>
-        <button type="button" onClick={() => { retryProjects(); retryTasks(); }} className="mt-3 rounded-md bg-brand-primary px-4 py-1.5 text-sm font-medium text-white">
+        <button type="button" onClick={data.retry} className="mt-3 rounded-md bg-brand-primary px-4 py-1.5 text-sm font-medium text-white">
           Try again
         </button>
       </FullPageMessage>
@@ -259,6 +363,7 @@ export default function Workspace({ store, user, onSignOut, settings, onSettings
   if (!loaded) return <FullPageMessage>Loading your projects…</FullPageMessage>;
 
   return (
+    <PeopleContext.Provider value={people}>
     <div className="min-h-screen p-4 sm:p-6">
       <a
         href="#main"
@@ -277,11 +382,23 @@ export default function Workspace({ store, user, onSignOut, settings, onSettings
         isCloud={isCloud}
         settings={settings}
         onSettingsChange={onSettingsChange}
+        onShare={isCloud && project ? () => setShareOpen(true) : undefined}
+        waitingCount={waitingCount}
       />
       <main id="main" tabIndex={-1} className="focus:outline-none">
-      {offerImport && !project && <ImportBanner count={localData.tasks.length} onImport={importLocal} onDismiss={dismissImport} />}
+      {offerImport && !project && !joinToken && <ImportBanner count={localData.tasks.length} onImport={importLocal} onDismiss={dismissImport} />}
 
-      {project ? (
+      {joinToken ? (
+        <JoinBoard
+          key={joinToken}
+          token={joinToken}
+          sharing={sharing}
+          onOpenBoard={(id) => navigate(id)}
+          onHome={() => navigate(null)}
+          onJoined={(message) => setToast({ message })}
+          onSignOut={onSignOut}
+        />
+      ) : project ? (
         <>
           <AnchorBoard key={project.id} anchors={project.anchors} onSave={saveAnchor} />
           <h2 id="board" tabIndex={-1} className="sr-only">Board</h2>
@@ -296,7 +413,17 @@ export default function Workspace({ store, user, onSignOut, settings, onSettings
           />
         </>
       ) : (
-        <ProjectsHome projects={projects} tasks={tasks} today={today} onOpen={navigate} onCreate={addProject} />
+        <ProjectsHome projects={projects} tasks={tasks} members={data.members} today={today} onOpen={navigate} onCreate={addProject}>
+          {isCloud && (
+            <InvitationsPanel
+              invitations={data.invitations}
+              requests={data.requests}
+              sharing={sharing}
+              onOpenBoard={(id) => navigate(id)}
+              onMessage={(message) => setToast({ message })}
+            />
+          )}
+        </ProjectsHome>
       )}
       </main>
 
@@ -307,7 +434,21 @@ export default function Workspace({ store, user, onSignOut, settings, onSettings
       </footer>
 
       <TaskModal task={editing} isNew={isNew} onSave={saveTask} onDelete={deleteTask} onClose={closeModal} today={today} />
+      {isCloud && project && (
+        <ShareDialog
+          key={project.id}
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+          project={project}
+          members={boardMembers}
+          sharing={sharing}
+          onRename={renameBoard}
+          onDelete={deleteBoard}
+          onLeave={leaveBoard}
+        />
+      )}
       <Toast toast={toast} onDone={clearToast} />
     </div>
+    </PeopleContext.Provider>
   );
 }

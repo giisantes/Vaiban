@@ -75,21 +75,59 @@ function AnchorCard({ anchor, onSave }) {
   );
 }
 
+const OPEN_KEY = 'vibetracker.deliverablesOpen';
+const readOpen = () => { try { return window.localStorage.getItem(OPEN_KEY) === '1'; } catch { return false; } };
+
 /**
- * The Anchor Board (M11): the four final-project deliverables, pinned above
- * the Kanban board so the team always sees what is still missing.
+ * The Anchor Board (M11): the four final-project deliverables above the board.
+ *
+ * D78: folded away by default behind a "Deliverables" button, so the board
+ * isn't crowded with four extra boxes and fields – less to take in, which
+ * helps people with cognitive disabilities (and everyone else). The button
+ * still shows how many are linked, so nothing is hidden about the progress.
+ * Open or closed is remembered in this browser. Built as a disclosure button
+ * (aria-expanded), which keyboards and screen readers already understand.
  *
  * @param {{ anchors: import('../lib/anchors.js').Anchor[], onSave: (id: string, url: string|null) => void }} props
  */
 export default function AnchorBoard({ anchors, onSave }) {
   const linked = anchors.filter((a) => a.url).length;
+  const [open, setOpen] = useState(readOpen);
+  const toggle = () => {
+    setOpen((was) => {
+      try { window.localStorage.setItem(OPEN_KEY, was ? '0' : '1'); } catch { /* per-browser convenience only */ }
+      return !was;
+    });
+  };
+
   return (
-    <section aria-labelledby="anchors-heading" className="z-30 -mx-4 mb-5 border-b border-slate-200 bg-slate-50/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 xl:sticky xl:top-0">
-      <div className="mb-2 flex items-baseline gap-3">
-        <h2 id="anchors-heading" className="text-sm font-semibold uppercase tracking-wide text-slate-800">Deliverables</h2>
-        <p className="text-xs text-slate-600">{linked} of {anchors.length} linked</p>
-      </div>
-      <ul className="four-cols grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
+    <section
+      aria-labelledby="anchors-heading"
+      className={`-mx-4 mb-5 border-b border-slate-200 bg-slate-50/95 px-4 py-2 sm:-mx-6 sm:px-6 ${open ? 'z-30 backdrop-blur xl:sticky xl:top-0' : ''}`}
+    >
+      <h2 id="anchors-heading" className="text-sm font-semibold text-slate-800">
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={open}
+          aria-controls="anchors-list"
+          className="-mx-1.5 inline-flex min-h-[32px] items-center gap-2 rounded-md px-1.5 py-1 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" className={`h-4 w-4 transition-transform motion-reduce:transition-none ${open ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m9 6 6 6-6 6" />
+          </svg>
+          <span className="uppercase tracking-wide">Deliverables</span>
+          <span className="text-xs font-normal normal-case tracking-normal text-slate-600">
+            <span aria-hidden="true" className="mr-1.5 inline-flex gap-0.5 align-middle">
+              {anchors.map((a) => (
+                <span key={a.id} className={`inline-block h-2 w-2 rounded-full ${a.url ? 'bg-due-safe' : 'border border-slate-400'}`} />
+              ))}
+            </span>
+            {linked} of {anchors.length} linked
+          </span>
+        </button>
+      </h2>
+      <ul id="anchors-list" hidden={!open} className={`four-cols mt-2 ${open ? 'grid' : 'hidden'} grid-cols-1 gap-3 pb-1 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4`}>
         {anchors.map((anchor) => (
           <AnchorCard key={anchor.id} anchor={anchor} onSave={onSave} />
         ))}

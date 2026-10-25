@@ -60,14 +60,3 @@ export function cloudStore(userId) {
     },
   };
 }
-
-/** Tasks / projects saved in this browser before accounts existed (for the import offer). */
-export function readLocalData() {
-  try {
-    const tasks = JSON.parse(window.localStorage.getItem(LOCAL_PREFIX + 'tasks') || 'null');
-    const projects = JSON.parse(window.localStorage.getItem(LOCAL_PREFIX + 'projects') || 'null');
-    return Array.isArray(tasks) && tasks.length ? { tasks, projects: Array.isArray(projects) ? projects : null } : null;
-  } catch {
-    return null;
-  }
-}

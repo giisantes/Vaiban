@@ -20,6 +20,7 @@ const SAVE_TEXT = {
  *   onNewTask?: () => void,
  *   user?: object | null,         // signed-in Supabase user (null = browser-only mode)
  *   onSignOut?: () => void,
+ *   onSignIn?: (mode: 'signin' | 'signup') => void, // signed out, accounts available (D74)
  *   saveStatus?: 'saving' | 'saved' | 'error',
  *   isCloud?: boolean,
  *   settings: object, onSettingsChange: (changes: object) => void,  // D60
@@ -32,7 +33,7 @@ const SAVE_TEXT = {
  * Accounts: shows who is signed in, a Sign out button, and whether the
  * latest change has reached the server ("All changes saved").
  */
-export default function AppHeader({ project, onHome, onNewTask, user, onSignOut, saveStatus = 'saved', isCloud, settings, onSettingsChange, onShare, waitingCount = 0, onLibrary, libraryActive = false, onBoardPrompts, boardPromptCount = 0 }) {
+export default function AppHeader({ project, onHome, onNewTask, user, onSignOut, onSignIn, saveStatus = 'saved', isCloud, settings, onSettingsChange, onShare, waitingCount = 0, onLibrary, libraryActive = false, onBoardPrompts, boardPromptCount = 0 }) {
   const name = displayName(user);
   return (
     <header className="mb-4 flex flex-wrap items-center justify-between gap-4">
@@ -95,6 +96,18 @@ export default function AppHeader({ project, onHome, onNewTask, user, onSignOut,
         )}
 
         <SettingsButton settings={settings} onChange={onSettingsChange} />
+
+        {!user && onSignIn && (
+          <div className="flex items-center gap-2 border-l border-slate-300 pl-3">
+            <button
+              type="button"
+              onClick={() => onSignIn('signin')}
+              className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+            >
+              Sign in
+            </button>
+          </div>
+        )}
 
         {user && (
           <div className="flex items-center gap-2 border-l border-slate-300 pl-3">

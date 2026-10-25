@@ -81,10 +81,11 @@ const TITLES = {
  * blocked (WCAG 2.2 SC 3.3.8 Accessible Authentication, SC 1.3.5 Identify
  * Input Purpose). Errors are announced (role="alert").
  *
- * @param {{ initialMode?: keyof TITLES, onPasswordReset?: () => void, joining?: boolean }} props
+ * @param {{ initialMode?: keyof TITLES, onPasswordReset?: () => void, joining?: boolean, onContinueWithout?: () => void }} props
+ *   onContinueWithout: go back to using Vaiban without an account (D74).
  *   joining: arrived from a board invite link (D62) – say so, so the sign-in isn't a surprise.
  */
-export default function AuthScreen({ initialMode = 'signin', onPasswordReset, settings, onSettingsChange, joining = false }) {
+export default function AuthScreen({ initialMode = 'signin', onPasswordReset, settings, onSettingsChange, joining = false, onContinueWithout }) {
   const [mode, setMode] = useState(initialMode);
   const [form, setForm] = useState({ name: '', username: '', email: '', password: '' });
   const [error, setError] = useState('');
@@ -150,6 +151,9 @@ export default function AuthScreen({ initialMode = 'signin', onPasswordReset, se
         <Logo />
         <section aria-labelledby="auth-title" className="mt-6 grid gap-4 rounded-lg border border-slate-200 bg-surface p-6 shadow-sm">
           <h1 id="auth-title" className="text-lg font-semibold text-slate-900">{TITLES[mode]}</h1>
+          {onContinueWithout && mode === 'signup' && (
+            <p className="text-sm text-slate-700">Boards, prompts and skills you made without an account will move into it.</p>
+          )}
           {joining && (mode === 'signin' || mode === 'signup') && (
             <p className="rounded-md bg-highlight px-3 py-2 text-sm text-slate-900">
               You've been invited to a board. Sign in, or create an account, and you'll be taken back to the invitation.
@@ -216,6 +220,13 @@ export default function AuthScreen({ initialMode = 'signin', onPasswordReset, se
             </form>
           )}
         </section>
+        {onContinueWithout && (
+          <p className="mt-4 text-center text-sm">
+            <button type="button" onClick={onContinueWithout} className="inline-flex min-h-[24px] items-center rounded text-link underline underline-offset-2 hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">
+              ← Continue without an account
+            </button>
+          </p>
+        )}
         {/* div, not p: the Settings window (a <dialog>) can't sit inside a paragraph */}
         <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-center text-xs text-slate-600">
           {/* Text size and theme are available before signing in, too. */}

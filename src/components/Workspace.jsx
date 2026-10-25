@@ -3,6 +3,7 @@ import { CONTEXT_TEMPLATE, STAGES, TEAM } from '../constants.js';
 import { useCloudBoards } from '../hooks/useCloudBoards.js';
 import { useHash } from '../hooks/useHash.js';
 import { useHashRoute } from '../hooks/useHashRoute.js';
+import { useGuestSync } from '../hooks/useGuestSync.js';
 import { useCloudLibrary, useLocalLibrary } from '../hooks/useLibrary.js';
 import { useStoredState } from '../hooks/useStoredState.js';
 import { useToday } from '../hooks/useToday.js';
@@ -13,7 +14,7 @@ import { joinTokenFromHash, takeJoinToken } from '../lib/joinToken.js';
 import { LibraryContext, libraryHash, parseLibraryRoute } from '../lib/libraryRoute.js';
 import { PeopleContext } from '../lib/people.js';
 import { createProject, seedProjects } from '../lib/projects.js';
-import { readLocalData } from '../lib/storage.js';
+import { markGuestChanged } from '../lib/guest.js';
 import { seedTasks } from '../data/seedTasks.js';
 import AnchorBoard from './AnchorBoard.jsx';
 import AppHeader from './AppHeader.jsx';
@@ -22,7 +23,6 @@ import Board from './Board.jsx';
 import ProjectsHome from './ProjectsHome.jsx';
 import TaskModal from './TaskModal.jsx';
 import Toast from './Toast.jsx';
-import ImportBanner from './ImportBanner.jsx';
 import InvitationsPanel from './InvitationsPanel.jsx';
 import JoinBoard from './JoinBoard.jsx';
 import LibraryPage from './LibraryPage.jsx';
@@ -69,6 +69,7 @@ import ShareDialog from './ShareDialog.jsx';
  *   store: import('../lib/storage.js').Store,  // this browser, or the user's account
  *   user: object | null,                       // the Supabase user (null = browser-only mode)
  *   onSignOut?: () => void,
+ *   onSignIn?: (mode: 'signin' | 'signup') => void,  // signed out, with accounts available (D74)
  *   settings: { textSize: string, theme: string },   // display settings (D60)
  *   onSettingsChange: (changes: object) => void,
  * }} props
@@ -88,21 +89,28 @@ function LocalWorkspace(props) {
   const [projects, setProjects, projectsStatus, retryProjects] = useStoredState(store, 'projects', seedProjects);
   const [tasks, setTasks, tasksStatus, retryTasks] = useStoredState(store, 'tasks', seedTasks);
   const statuses = [projectsStatus, tasksStatus];
+  // D74: remember that this visitor made real changes, so they move into an account on sign-in.
+  const changed = (setter) => (update) => { markGuestChanged(); setter(update); };
   const data = {
     loaded: projects !== undefined && tasks !== undefined,
     loadError: statuses.includes('load-error'),
     retry: () => { retryProjects(); retryTasks(); },
     projects: projects ?? [],
     tasks: tasks ?? [],
-    setProjects,
-    setTasks,
+    setProjects: useMemo(() => changed(setProjects), [setProjects]), // eslint-disable-line react-hooks/exhaustive-deps
+    setTasks: useMemo(() => changed(setTasks), [setTasks]), // eslint-disable-line react-hooks/exhaustive-deps
     saveStatus: statuses.includes('error') ? 'error' : statuses.includes('saving') ? 'saving' : 'saved',
     members: [],
     invitations: [],
     requests: [],
     sharing: null,
   };
-  const library = useLocalLibrary(store);
+  const local = useLocalLibrary(store);
+  const library = {
+    ...local,
+    save: (item) => { markGuestChanged(); return local.save(item); },
+    remove: (item) => { markGuestChanged(); return local.remove(item); },
+  };
   return <WorkspaceView {...props} data={data} library={library} />;
 }
 
@@ -115,7 +123,7 @@ function CloudWorkspace(props) {
   return <WorkspaceView {...props} data={data} notify={notify} library={library} />;
 }
 
-function WorkspaceView({ store, user, onSignOut, settings, onSettingsChange, data, notify, library }) {
+function WorkspaceView({ store, user, onSignOut, onSignIn, settings, onSettingsChange, data, notify, library }) {
   const isCloud = store.kind === 'cloud';
   const { loaded, projects, setProjects, setTasks, sharing } = data;
 
@@ -354,32 +362,8 @@ function WorkspaceView({ store, user, onSignOut, settings, onSettingsChange, dat
     return () => window.removeEventListener('beforeunload', warn);
   }, [saveStatus]);
 
-  // Accounts: offer to bring in tasks saved in this browser before signing up.
-  const dismissKey = user ? `vibetracker.importDismissed.${user.id}` : null;
-  const [importDismissed, setImportDismissed] = useState(() => {
-    try { return dismissKey ? Boolean(window.localStorage.getItem(dismissKey)) : true; } catch { return true; }
-  });
-  const localData = useMemo(() => (isCloud ? readLocalData() : null), [isCloud]);
-  const offerImport = isCloud && loaded && !importDismissed && localData && tasks.length === 0 && projects.length === 0;
-  const dismissImport = () => {
-    setImportDismissed(true);
-    try { window.localStorage.setItem(dismissKey, '1'); } catch { /* ignore */ }
-  };
-  const importLocal = () => {
-    // Shared boards need real (UUID) ids, so imported projects get new ones
-    // and their tasks follow them.
-    const ids = new Map();
-    const imported = (localData.projects ?? seedProjects()).map((p) => {
-      const id = createProject().id;
-      ids.set(p.id, id);
-      return { ...p, id };
-    });
-    const fallback = imported[0]?.id;
-    setProjects((prev) => [...prev, ...imported]);
-    setTasks((prev) => [...prev, ...localData.tasks.map((t) => ({ ...withTaskDefaults(t), projectId: ids.get(withTaskDefaults(t).projectId) ?? fallback }))]);
-    dismissImport();
-    setToast({ message: `Imported ${localData.tasks.length} tasks into your account.` });
-  };
+  // D74: boards, tasks, prompts and skills made before signing in move into the account.
+  useGuestSync({ enabled: isCloud, data, library, onDone: (message) => setToast({ message }) });
 
   if (data.loadError) {
     return (
@@ -412,6 +396,7 @@ function WorkspaceView({ store, user, onSignOut, settings, onSettingsChange, dat
         onNewTask={openNewTask}
         user={user}
         onSignOut={onSignOut}
+        onSignIn={onSignIn}
         saveStatus={saveStatus}
         isCloud={isCloud}
         settings={settings}
@@ -424,7 +409,6 @@ function WorkspaceView({ store, user, onSignOut, settings, onSettingsChange, dat
         boardPromptCount={boardPromptCount}
       />
       <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
-      {offerImport && !project && !joinToken && <ImportBanner count={localData.tasks.length} onImport={importLocal} onDismiss={dismissImport} />}
 
       {joinToken ? (
         <JoinBoard
@@ -467,6 +451,18 @@ function WorkspaceView({ store, user, onSignOut, settings, onSettingsChange, dat
         </>
       ) : (
         <ProjectsHome projects={projects} tasks={tasks} members={data.members} today={today} onOpen={navigate} onCreate={addProject}>
+          {onSignIn && (
+            <section aria-labelledby="guest-title" className="grid gap-2 rounded-lg border border-brand-primary/30 bg-highlight p-4 sm:flex sm:items-center sm:justify-between">
+              <div className="grid gap-0.5">
+                <h2 id="guest-title" className="text-sm font-semibold text-slate-900">You're using Vaiban without an account</h2>
+                <p className="text-sm text-slate-800">Everything is saved in this browser only. Create an account to use it on other devices and share boards – what you've made here moves into it.</p>
+              </div>
+              <div className="flex shrink-0 flex-wrap gap-2">
+                <button type="button" onClick={() => onSignIn('signin')} className="rounded-md border border-slate-300 bg-surface px-3 py-1.5 text-sm font-medium text-slate-800 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">Sign in</button>
+                <button type="button" onClick={() => onSignIn('signup')} className="rounded-md bg-brand-primary px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2">Create account</button>
+              </div>
+            </section>
+          )}
           <nav aria-label="Your libraries" className="grid gap-3 sm:grid-cols-2">
             {[
               { kind: 'prompt', title: 'Prompt library', count: prompts.length, text: 'Prompts that worked, and what they produced' },

@@ -89,7 +89,7 @@ export default function AnchorBoard({ anchors, onSave }) {
         <h2 id="anchors-heading" className="text-sm font-semibold uppercase tracking-wide text-slate-800">Deliverables</h2>
         <p className="text-xs text-slate-600">{linked} of {anchors.length} linked</p>
       </div>
-      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:gap-4">
+      <ul className="four-cols grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
         {anchors.map((anchor) => (
           <AnchorCard key={anchor.id} anchor={anchor} onSave={onSave} />
         ))}

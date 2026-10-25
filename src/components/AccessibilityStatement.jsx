@@ -28,7 +28,7 @@ export default function AccessibilityStatement() {
             <li>Use everything with a keyboard alone. Press <kbd className="rounded border border-slate-300 bg-surface px-1">Tab</kbd> to move, <kbd className="rounded border border-slate-300 bg-surface px-1">Enter</kbd> to choose and <kbd className="rounded border border-slate-300 bg-surface px-1">Esc</kbd> to close. "Skip to main content" is the first thing on every page.</li>
             <li>Move cards between columns without dragging: use the <strong>Move</strong> button on each card. Dragging with a mouse also works.</li>
             <li>Undo the last change with the <strong>Undo</strong> button in the message at the bottom of the screen, or <kbd className="rounded border border-slate-300 bg-surface px-1">Ctrl</kbd>+<kbd className="rounded border border-slate-300 bg-surface px-1">Z</kbd>.</li>
-            <li>Choose your text size in <strong>Settings</strong>. The standard size makes the smallest text 14pt, as recommended in <em>Access for All</em> (Goodwin and Loizides, 2025). You can also pick a smaller or larger size.</li>
+            <li>Choose your text size in <strong>Settings</strong>. <strong>Larger</strong> makes the smallest text 14pt, as recommended in <em>Access for All</em> (Goodwin and Loizides, 2025). You can also pick a smaller size.</li>
             <li>Choose a <strong>light or dark theme</strong> in Settings, or let it follow your device (the default).</li>
             <li>Zoom up to 400%: the board changes to one column instead of scrolling sideways.</li>
             <li>Tell feature, bug and due-date states apart without colour – each has a word and an icon as well.</li>

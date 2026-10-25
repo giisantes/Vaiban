@@ -25,7 +25,7 @@ export default function Board({ tasks, onOpenTask, onHandOff, onMoveTask, highli
   return (
     // One column on narrow screens or high zoom, two on tablets, four on desktop –
     // so nothing has to scroll sideways at 400% zoom (WCAG 2.2 SC 1.4.10 Reflow).
-    <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="four-cols grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {STAGES.map((stage) => (
         <Column
           key={stage.id}

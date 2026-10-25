@@ -3,12 +3,29 @@
 @tailwind utilities;
 
 /* Settings (D59, D60) -------------------------------------------------------
-   Text size: everything is sized in rem, so changing the root font size
-   scales the whole app. 16px root = the standard size, where the smallest
-   text is 14pt. Chosen in Settings and stored on <html data-text-size>. */
-html { font-size: 16px; }
-html[data-text-size='smaller'] { font-size: 13.714px; }  /* smallest text 12pt */
-html[data-text-size='larger']  { font-size: 18.286px; }  /* smallest text 16pt */
+   Text size, chosen in Settings and stored on <html data-text-size>.
+   Default: Tailwind's usual sizes – the smallest text is 12px, as before D59.
+   Larger:  the smallest text is 14pt (≈18.7px), the minimum recommended in
+            Goodwin and Loizides (2025, p. 18).
+   Smaller: the default scale with a smaller root, so the smallest text is 11px. */
+html {
+  font-size: 16px;
+  --fs-xs: 0.75rem;   --lh-xs: 1rem;
+  --fs-sm: 0.875rem;  --lh-sm: 1.25rem;
+  --fs-base: 1rem;    --lh-base: 1.5rem;
+  --fs-lg: 1.125rem;  --lh-lg: 1.75rem;
+  --fs-xl: 1.25rem;   --lh-xl: 1.75rem;
+  --fs-2xl: 1.5rem;   --lh-2xl: 2rem;
+}
+html[data-text-size='smaller'] { font-size: 14.667px; }  /* smallest text 11px */
+html[data-text-size='larger'] {
+  --fs-xs: 1.1667rem; --lh-xs: 1.5rem;     /* 14pt */
+  --fs-sm: 1.1667rem; --lh-sm: 1.625rem;   /* 14pt */
+  --fs-base: 1.25rem; --lh-base: 1.75rem;  /* 15pt */
+  --fs-lg: 1.375rem;  --lh-lg: 1.875rem;
+  --fs-xl: 1.5rem;    --lh-xl: 2rem;
+  --fs-2xl: 1.875rem; --lh-2xl: 2.375rem;
+}
 
 /* Theme: colour values as "R G B" so Tailwind's opacity modifiers work.
    Light is the default; dark applies when the system asks for it (unless the

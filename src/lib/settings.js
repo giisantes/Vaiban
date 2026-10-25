@@ -6,19 +6,20 @@
  * about them.
  */
 
+// The id 'standard' is kept for the default so settings saved before still load.
 export const TEXT_SIZES = [
-  { id: 'smaller',  label: 'Smaller',  detail: 'Smallest text 12pt' },
-  { id: 'standard', label: 'Standard', detail: 'Smallest text 14pt – recommended' },
-  { id: 'larger',   label: 'Larger',   detail: 'Smallest text 16pt' },
+  { id: 'smaller',  label: 'Smaller' },
+  { id: 'standard', label: 'Default' },
+  { id: 'larger',   label: 'Larger' },
 ];
 
 export const THEMES = [
-  { id: 'system', label: 'System default', detail: 'Follow your device' },
-  { id: 'light',  label: 'Light',          detail: 'Dark text on light backgrounds' },
-  { id: 'dark',   label: 'Dark',           detail: 'Light text on dark backgrounds' },
+  { id: 'system', label: 'System default' },
+  { id: 'light',  label: 'Light' },
+  { id: 'dark',   label: 'Dark' },
 ];
 
-/** 14pt and "follow the device" are the defaults (D59, D60). */
+/** Default text size and "follow the device" are the defaults (D59, D60). */
 export const DEFAULT_SETTINGS = { textSize: 'standard', theme: 'system' };
 
 const LOCAL_KEY = 'vibetracker.settings';

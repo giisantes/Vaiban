@@ -36,18 +36,11 @@ export default {
         },
       },
 
-      // Text sizes (D59): at the standard setting the smallest text is 14pt
-      // (≈18.7px), the minimum recommended in Goodwin and Loizides (2025, p. 18).
-      // Everything is in rem, so the Settings text-size option (D60) scales the
-      // whole app by changing one root font size in index.css.
-      fontSize: {
-        xs:   ['1.1667rem', { lineHeight: '1.5rem' }],   // 14pt
-        sm:   ['1.1667rem', { lineHeight: '1.625rem' }], // 14pt
-        base: ['1.25rem',   { lineHeight: '1.75rem' }],  // 15pt
-        lg:   ['1.375rem',  { lineHeight: '1.875rem' }],
-        xl:   ['1.5rem',    { lineHeight: '2rem' }],
-        '2xl': ['1.875rem', { lineHeight: '2.375rem' }],
-      },
+      // Text sizes (D59, D60): the actual sizes live in CSS variables in
+      // index.css, one set per Settings option (Smaller / Default / Larger).
+      fontSize: Object.fromEntries(
+        ['xs', 'sm', 'base', 'lg', 'xl', '2xl'].map((k) => [k, [`var(--fs-${k})`, { lineHeight: `var(--lh-${k})` }]])
+      ),
 
       // M7 task-owner — the handoff toast fades in over 200 ms (DESIGN.md §7).
       keyframes: {

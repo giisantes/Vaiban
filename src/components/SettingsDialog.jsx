@@ -12,7 +12,7 @@ function Choice({ legend, name, options, value, onChange }) {
           return (
             <label
               key={option.id}
-              className={`flex cursor-pointer items-start gap-2 rounded-md border p-3 focus-within:ring-2 focus-within:ring-brand-primary ${
+              className={`flex cursor-pointer items-center gap-2 rounded-md border p-3 focus-within:ring-2 focus-within:ring-brand-primary ${
                 checked ? 'border-brand-primary bg-highlight' : 'border-slate-300 bg-surface hover:bg-slate-100'
               }`}
             >
@@ -22,12 +22,9 @@ function Choice({ legend, name, options, value, onChange }) {
                 value={option.id}
                 checked={checked}
                 onChange={() => onChange(option.id)}
-                className="mt-1 h-4 w-4 accent-[rgb(var(--brand-primary))]"
+                className="h-4 w-4 accent-[rgb(var(--brand-primary))]"
               />
-              <span className="grid">
-                <span className="text-sm font-medium text-slate-900">{option.label}</span>
-                <span className="text-xs text-slate-600">{option.detail}</span>
-              </span>
+              <span className="text-sm font-medium text-slate-900">{option.label}</span>
             </label>
           );
         })}

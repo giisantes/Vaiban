@@ -22,8 +22,9 @@ This adds `@supabase/supabase-js`. Commit the updated `package-lock.json` afterw
    2. `supabase/migrations/002_allow_settings.sql` – lets settings be saved.
    3. `supabase/migrations/003_shared_boards.sql` – shared boards: boards, tasks, members and invites, with the row-level security rules that decide who sees what. It also moves any projects and tasks already saved into the new tables (the old rows are kept as a backup) and switches on live updates.
    4. `supabase/migrations/004_email_invites.sql` – makes emailed invitation links personal and one-time, and limits how many invitation emails can be sent.
+   5. `supabase/migrations/005_prompt_library.sql` – the prompt library and the AI skills library: private items for each user, and shared ones for each board.
 
-   **Already set up before?** Just run the ones you haven't run yet (most likely 002, 003 and 004). Run each one only once – running 003 a second time stops with an error saying a table already exists, which is harmless.
+   **Already set up before?** Just run the ones you haven't run yet (most likely 005). Run each one only once – running 003 a second time stops with an error saying a table already exists, which is harmless.
 3. Open **Authentication → Sign In / Providers → Email** and check that:
    - **Email** sign-in is enabled
    - **Confirm email** is ON, so people must prove they own the address
@@ -97,4 +98,5 @@ The function never uses the service_role key, and the link in the email always p
 | Members' email addresses | Supabase Auth only (looked up on request) | The board owner, in the Share window |
 | Invites | `board_invites` table | The board owner. Someone with a link sees only the board's name and owner. An emailed link only works for the address it was sent to |
 | The Resend key | Supabase Edge Function secrets | Only the send-invite function – never the website |
+| Prompts and AI skills | `prompts` and `ai_skills` tables | Private ones: only their author. A board's ones: that board's active members |
 | Display settings | `user_data` table | Only that user |

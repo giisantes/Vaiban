@@ -1,5 +1,6 @@
 import { STAGES } from '../constants.js';
 import { dueState } from '../lib/dueState.js';
+import { useLibraryContext } from '../lib/libraryRoute.js';
 import { relativeTime } from '../lib/relativeTime.js';
 import Avatar from './Avatar.jsx';
 import CopyContextButton from './CopyContextButton.jsx';
@@ -39,6 +40,9 @@ export default function TaskDetails({ task, today, onEdit, onClose }) {
   const due = dueState(task, today);
   const status = STAGES.find((s) => s.id === task.status)?.label ?? task.status;
   const context = (task.context || '').trim();
+  // FR36: prompts attached to this task (from the prompt library).
+  const library = useLibraryContext();
+  const prompts = library.prompts.filter((p) => p.boardId === task.projectId && p.taskIds.includes(task.id));
 
   return (
     <div className="grid gap-5 p-5">
@@ -102,6 +106,37 @@ export default function TaskDetails({ task, today, onEdit, onClose }) {
         <div className="flex justify-end">
           <CopyContextButton task={task} className="py-1.5 text-sm" />
         </div>
+      </section>
+
+      <section aria-labelledby="details-prompts" className="grid gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 id="details-prompts" className="text-sm font-semibold text-slate-900">Prompts used ({prompts.length})</h3>
+          <button
+            type="button"
+            onClick={() => library.openLibrary({ kind: 'prompt', board: task.projectId, isNew: true, task: task.id })}
+            className="inline-flex min-h-[28px] items-center rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-800 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+          >
+            + Save a prompt for this task
+          </button>
+        </div>
+        {prompts.length === 0 ? (
+          <p className="text-sm text-slate-600">No prompts saved for this task yet.</p>
+        ) : (
+          <ul className="grid gap-1">
+            {prompts.map((p) => (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  onClick={() => library.openLibrary({ kind: 'prompt', board: task.projectId, id: p.id })}
+                  className="inline-flex min-h-[24px] items-center rounded text-left text-sm text-link underline underline-offset-2 hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary [overflow-wrap:anywhere]"
+                >
+                  {p.name}
+                </button>
+                {p.tags.length > 0 && <span className="text-xs text-slate-600"> · {p.tags.join(', ')}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <div className="flex justify-end border-t border-slate-200 pt-4">

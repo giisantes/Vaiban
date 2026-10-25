@@ -1,4 +1,5 @@
 import { DUE_STYLES, dueState } from '../lib/dueState.js';
+import { useLibraryContext } from '../lib/libraryRoute.js';
 import { typeStyle } from '../lib/typeStyles.js';
 import DueChip from './DueChip.jsx';
 import CardActions from './CardActions.jsx';
@@ -33,6 +34,8 @@ import TypeBadge from './TypeBadge.jsx';
  */
 export default function TaskCard({ task, onOpen, onHandOff, onMove, justHandedOff, today, onCopied, isDragging, onDragStart, onDragEnd }) {
   const due = dueState(task, today);
+  // D7 / FR36: the card says when prompts have been saved for this task.
+  const promptCount = useLibraryContext().prompts.filter((p) => p.boardId === task.projectId && p.taskIds.includes(task.id)).length;
 
   return (
     <article
@@ -62,9 +65,17 @@ export default function TaskCard({ task, onOpen, onHandOff, onMove, justHandedOf
         <TypeBadge type={task.type} />
       </div>
 
-      {due.state !== 'none' && (
-        <div className="mt-2">
-          <DueChip due={due} />
+      {(due.state !== 'none' || promptCount > 0) && (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {due.state !== 'none' && <DueChip due={due} />}
+          {promptCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-700">
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 5h16M4 12h10M4 19h7" />
+              </svg>
+              {promptCount} {promptCount === 1 ? 'prompt' : 'prompts'}
+            </span>
+          )}
         </div>
       )}
 

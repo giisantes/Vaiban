@@ -3,11 +3,14 @@ import { CONTEXT_TEMPLATE, STAGES, TEAM } from '../constants.js';
 import { useCloudBoards } from '../hooks/useCloudBoards.js';
 import { useHash } from '../hooks/useHash.js';
 import { useHashRoute } from '../hooks/useHashRoute.js';
+import { useCloudLibrary, useLocalLibrary } from '../hooks/useLibrary.js';
 import { useStoredState } from '../hooks/useStoredState.js';
 import { useToday } from '../hooks/useToday.js';
 import { useUndo } from '../hooks/useUndo.js';
 import { createTask, withTaskDefaults } from '../lib/createTask.js';
+import { displayName } from '../lib/auth.js';
 import { joinTokenFromHash, takeJoinToken } from '../lib/joinToken.js';
+import { LibraryContext, libraryHash, parseLibraryRoute } from '../lib/libraryRoute.js';
 import { PeopleContext } from '../lib/people.js';
 import { createProject, seedProjects } from '../lib/projects.js';
 import { readLocalData } from '../lib/storage.js';
@@ -22,6 +25,7 @@ import Toast from './Toast.jsx';
 import ImportBanner from './ImportBanner.jsx';
 import InvitationsPanel from './InvitationsPanel.jsx';
 import JoinBoard from './JoinBoard.jsx';
+import LibraryPage from './LibraryPage.jsx';
 import ShareDialog from './ShareDialog.jsx';
 
 /**
@@ -98,7 +102,8 @@ function LocalWorkspace(props) {
     requests: [],
     sharing: null,
   };
-  return <WorkspaceView {...props} data={data} />;
+  const library = useLocalLibrary(store);
+  return <WorkspaceView {...props} data={data} library={library} />;
 }
 
 function CloudWorkspace(props) {
@@ -106,10 +111,11 @@ function CloudWorkspace(props) {
   // let in…) go to the view's toast once it has registered itself here.
   const notify = useRef(() => {});
   const data = useCloudBoards(props.user, (message) => notify.current(message));
-  return <WorkspaceView {...props} data={data} notify={notify} />;
+  const library = useCloudLibrary(props.user, displayName(props.user));
+  return <WorkspaceView {...props} data={data} notify={notify} library={library} />;
 }
 
-function WorkspaceView({ store, user, onSignOut, settings, onSettingsChange, data, notify }) {
+function WorkspaceView({ store, user, onSignOut, settings, onSettingsChange, data, notify, library }) {
   const isCloud = store.kind === 'cloud';
   const { loaded, projects, setProjects, setTasks, sharing } = data;
 
@@ -118,6 +124,8 @@ function WorkspaceView({ store, user, onSignOut, settings, onSettingsChange, dat
   const project = projects.find((p) => p.id === projectId) ?? null;
   const hash = useHash();
   const joinToken = isCloud ? joinTokenFromHash(hash) : null;
+  // D69: the prompt and AI skills libraries live at #/library/…
+  const libraryRoute = joinToken ? null : parseLibraryRoute(hash);
 
   // M9: tasks saved before the context fields existed get their defaults.
   const tasks = useMemo(() => data.tasks.map(withTaskDefaults), [data.tasks]);
@@ -249,9 +257,32 @@ function WorkspaceView({ store, user, onSignOut, settings, onSettingsChange, dat
   // Each screen has its own page title, so screen-reader users and browser
   // tabs say where you are (WCAG 2.2 SC 2.4.2 Page Titled).
   useEffect(() => {
-    if (joinToken) return; // the join screen sets its own
+    if (joinToken || libraryRoute) return; // the join and library screens set their own
     document.title = project ? `${project.name} – Vaiban` : 'Your projects – Vaiban';
-  }, [project, joinToken]);
+  }, [project, joinToken, libraryRoute]);
+
+  // ── D69–D71: prompt library and AI skills library ──
+  // Only items in your private library or on a board you're still on (the
+  // database enforces this too; this just hides them at once when you leave).
+  const boardIds = useMemo(() => new Set(projects.map((p) => p.id)), [projects]);
+  const visible = (items) => items.filter((x) => x.boardId === null || boardIds.has(x.boardId));
+  const prompts = useMemo(() => visible(library.prompts), [library.prompts, boardIds]); // eslint-disable-line react-hooks/exhaustive-deps
+  const skills = useMemo(() => visible(library.skills), [library.skills, boardIds]); // eslint-disable-line react-hooks/exhaustive-deps
+  /** Go to a library view. `replace` changes the address without adding a Back step. */
+  const goLibrary = useCallback((route, replace = false) => {
+    setEditing(null);
+    const target = `#${libraryHash(route)}`;
+    if (replace) window.location.replace(target);
+    else window.location.hash = target;
+  }, []);
+  /** From a prompt to the task it was used for: open the board, then the task. */
+  const openTaskFromLibrary = (boardId, taskId) => {
+    const task = tasks.find((t) => t.id === taskId);
+    navigate(boardId);
+    if (task) setEditing(task);
+  };
+  const libraryValue = useMemo(() => ({ prompts, skills, openLibrary: goLibrary }), [prompts, skills, goLibrary]);
+  const boardPromptCount = project ? prompts.filter((p) => p.boardId === project.id).length : 0;
 
   /** "Skip to main content" – jumps past the header and the Deliverables strip. */
   const skipToMain = (e) => {
@@ -363,6 +394,7 @@ function WorkspaceView({ store, user, onSignOut, settings, onSettingsChange, dat
   if (!loaded) return <FullPageMessage>Loading your projects…</FullPageMessage>;
 
   return (
+    <LibraryContext.Provider value={libraryValue}>
     <PeopleContext.Provider value={people}>
     <div className="flex min-h-screen flex-col p-4 sm:p-6">
       {/* flex column + flex-1 on <main>: on short pages the footer sits at the
@@ -386,6 +418,10 @@ function WorkspaceView({ store, user, onSignOut, settings, onSettingsChange, dat
         onSettingsChange={onSettingsChange}
         onShare={isCloud && project ? () => setShareOpen(true) : undefined}
         waitingCount={waitingCount}
+        onLibrary={() => goLibrary({ kind: 'prompt' })}
+        libraryActive={Boolean(libraryRoute)}
+        onBoardPrompts={project ? () => goLibrary({ kind: 'prompt', board: project.id }) : undefined}
+        boardPromptCount={boardPromptCount}
       />
       <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
       {offerImport && !project && !joinToken && <ImportBanner count={localData.tasks.length} onImport={importLocal} onDismiss={dismissImport} />}
@@ -399,6 +435,21 @@ function WorkspaceView({ store, user, onSignOut, settings, onSettingsChange, dat
           onHome={() => navigate(null)}
           onJoined={(message) => setToast({ message })}
           onSignOut={onSignOut}
+        />
+      ) : libraryRoute ? (
+        <LibraryPage
+          route={libraryRoute}
+          prompts={prompts}
+          skills={skills}
+          projects={projects}
+          tasks={tasks}
+          save={library.save}
+          remove={library.remove}
+          go={goLibrary}
+          onOpenTask={openTaskFromLibrary}
+          isCloud={isCloud}
+          loaded={library.loaded}
+          failed={library.failed}
         />
       ) : project ? (
         <>
@@ -416,6 +467,22 @@ function WorkspaceView({ store, user, onSignOut, settings, onSettingsChange, dat
         </>
       ) : (
         <ProjectsHome projects={projects} tasks={tasks} members={data.members} today={today} onOpen={navigate} onCreate={addProject}>
+          <nav aria-label="Your libraries" className="grid gap-3 sm:grid-cols-2">
+            {[
+              { kind: 'prompt', title: 'Prompt library', count: prompts.length, text: 'Prompts that worked, and what they produced' },
+              { kind: 'skill', title: 'AI skills', count: skills.length, text: 'Reusable ways of working with AI tools' },
+            ].map((lib) => (
+              <a
+                key={lib.kind}
+                href={`#${libraryHash({ kind: lib.kind })}`}
+                onClick={(e) => { e.preventDefault(); goLibrary({ kind: lib.kind }); }}
+                className="grid gap-0.5 rounded-lg border border-slate-200 bg-surface p-3 hover:border-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+              >
+                <span className="text-sm font-semibold text-slate-900">{lib.title} ({lib.count}) <span aria-hidden="true">→</span></span>
+                <span className="text-xs text-slate-600">{lib.text} – yours and your boards'</span>
+              </a>
+            ))}
+          </nav>
           {isCloud && (
             <InvitationsPanel
               invitations={data.invitations}
@@ -452,5 +519,6 @@ function WorkspaceView({ store, user, onSignOut, settings, onSettingsChange, dat
       <Toast toast={toast} onDone={clearToast} />
     </div>
     </PeopleContext.Provider>
+    </LibraryContext.Provider>
   );
 }

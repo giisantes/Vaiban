@@ -46,6 +46,39 @@ export function taskToRow(task) {
   return { board_id: task.projectId, id: task.id, data: task };
 }
 
+// ── Library items (prompts, AI skills) ──
+
+const LIBRARY_TABLE = { prompt: 'prompts', skill: 'ai_skills' };
+
+const list = (value) => (Array.isArray(value) ? value.map(String) : []);
+
+/** prompts / ai_skills row → the app's LibraryItem (lib/library.js). */
+export function rowToLibraryItem(kind, row) {
+  const item = {
+    id: row.id,
+    kind,
+    boardId: row.board_id ?? null,
+    name: row.name,
+    tags: list(row.tags),
+    aiTool: row.ai_tool ?? null,
+    ownerId: row.owner_id,
+    authorName: row.author_name ?? '',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+  return kind === 'prompt'
+    ? { ...item, body: row.body ?? '', result: row.result ?? '', taskIds: list(row.task_ids) }
+    : { ...item, overview: row.overview ?? '', instructions: row.instructions ?? '' };
+}
+
+/** The app's LibraryItem → the columns a user may write (the database fills in author and dates). */
+export function libraryItemToRow(item) {
+  const row = { id: item.id, board_id: item.boardId, name: item.name, tags: item.tags, ai_tool: item.aiTool };
+  return item.kind === 'prompt'
+    ? { ...row, body: item.body, result: item.result, task_ids: item.taskIds }
+    : { ...row, overview: item.overview, instructions: item.instructions };
+}
+
 // ── Reading ──
 
 export const api = {
@@ -109,6 +142,26 @@ export const api = {
   /** Remove someone, decline a request, leave a board, or cancel your own request. */
   removeMember: (boardId, userId) => run(supabase.rpc('remove_member', { p_board: boardId, p_user: userId })),
   refreshMyName: () => run(supabase.rpc('refresh_my_name')),
+
+  // ── Prompt library and AI skills library (D69–D71) ──
+
+  /** Every prompt or skill this user may see: their private ones + their boards' ones. */
+  loadLibrary: async (kind) => (await run(supabase.from(LIBRARY_TABLE[kind]).select('*'))).map((row) => rowToLibraryItem(kind, row)),
+  createLibraryItem: (item) => run(supabase.from(LIBRARY_TABLE[item.kind]).insert(libraryItemToRow(item))),
+  updateLibraryItem: (item) => {
+    const { id, ...changes } = libraryItemToRow(item);
+    return run(supabase.from(LIBRARY_TABLE[item.kind]).update(changes).eq('id', id));
+  },
+  deleteLibraryItem: (item) => run(supabase.from(LIBRARY_TABLE[item.kind]).delete().eq('id', item.id)),
+  /** Live updates for the two library tables. @returns {() => void} unsubscribe */
+  subscribeLibrary(userId, onChange) {
+    const channel = supabase.channel(`vaiban-library-${userId}`);
+    for (const table of Object.values(LIBRARY_TABLE)) {
+      channel.on('postgres_changes', { event: '*', schema: 'public', table }, () => onChange());
+    }
+    channel.subscribe();
+    return () => supabase.removeChannel(channel);
+  },
 
   /**
    * Live updates: calls `onChange(table, payload)` whenever a board, member

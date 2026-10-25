@@ -2,6 +2,7 @@ import { STAGES } from '../constants.js';
 import { dueState } from '../lib/dueState.js';
 import { dropEmptySections } from '../lib/contextPrompt.js';
 import { useLibraryContext } from '../lib/libraryRoute.js';
+import { useMilestones } from '../lib/milestones.js';
 import { relativeTime } from '../lib/relativeTime.js';
 import Avatar from './Avatar.jsx';
 import CopyContextButton from './CopyContextButton.jsx';
@@ -48,13 +49,22 @@ export default function TaskDetails({ task, today, onEdit, onClose }) {
   const context = dropEmptySections(task.context || '');
   // FR36: prompts attached to this task (from the prompt library).
   const library = useLibraryContext();
+  const milestone = useMilestones().find((m) => m.id === task.milestoneId); // D79
   const prompts = library.prompts.filter((p) => p.boardId === task.projectId && p.taskIds.includes(task.id));
 
   return (
     <div className="flex max-h-[calc(100dvh-38px)] flex-col gap-4 p-4 sm:p-5">
       <div className="flex shrink-0 items-start justify-between gap-3">
         <div className="grid min-w-0 justify-items-start gap-1.5">
-          <TypeBadge type={task.type} />
+          <span className="flex flex-wrap items-center gap-2">
+            <TypeBadge type={task.type} />
+            {milestone && (
+              <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-800">
+                <span aria-hidden="true" className="text-brand-primary">◆</span>
+                <span className="sr-only">Milestone: </span>{milestone.name}
+              </span>
+            )}
+          </span>
           <h2 id="task-modal-title" className="text-xl font-semibold text-slate-900 [overflow-wrap:anywhere]">
             {task.title}
           </h2>

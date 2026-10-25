@@ -1,5 +1,6 @@
 import { DUE_STYLES, dueState } from '../lib/dueState.js';
 import { useLibraryContext } from '../lib/libraryRoute.js';
+import { useMilestones } from '../lib/milestones.js';
 import { typeStyle } from '../lib/typeStyles.js';
 import DueChip from './DueChip.jsx';
 import CardActions from './CardActions.jsx';
@@ -35,6 +36,7 @@ import TypeBadge from './TypeBadge.jsx';
 export default function TaskCard({ task, onOpen, onHandOff, onMove, justHandedOff, today, onCopied, isDragging, onDragStart, onDragEnd }) {
   const due = dueState(task, today);
   // D7 / FR36: the card says when prompts have been saved for this task.
+  const milestone = useMilestones().find((m) => m.id === task.milestoneId); // D79
   const promptCount = useLibraryContext().prompts.filter((p) => p.boardId === task.projectId && p.taskIds.includes(task.id)).length;
 
   return (
@@ -65,8 +67,14 @@ export default function TaskCard({ task, onOpen, onHandOff, onMove, justHandedOf
         <TypeBadge type={task.type} />
       </div>
 
-      {(due.state !== 'none' || promptCount > 0) && (
+      {(due.state !== 'none' || promptCount > 0 || milestone) && (
         <div className="mt-2 flex flex-wrap items-center gap-2">
+          {milestone && (
+            <span className="inline-flex max-w-full items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-800 [overflow-wrap:anywhere]">
+              <span aria-hidden="true" className="text-brand-primary">◆</span>
+              <span className="sr-only">Milestone: </span>{milestone.name}
+            </span>
+          )}
           {due.state !== 'none' && <DueChip due={due} />}
           {promptCount > 0 && (
             <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-700">

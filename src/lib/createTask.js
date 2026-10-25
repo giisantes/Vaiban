@@ -54,6 +54,7 @@ export function createTask(fields = {}) {
     context: '',
     contextTool: null,
     contextUpdatedAt: null,
+    milestoneId: null, // D79
     order: Date.now(),
     ...fields,
   };
@@ -80,5 +81,5 @@ export function byOrder(a, b) {
  * @returns {Task}
  */
 export function withTaskDefaults(task) {
-  return { projectId: DEFAULT_PROJECT_ID, context: '', contextTool: null, contextUpdatedAt: null, ...task };
+  return { projectId: DEFAULT_PROJECT_ID, context: '', contextTool: null, contextUpdatedAt: null, milestoneId: null, ...task };
 }

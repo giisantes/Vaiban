@@ -28,6 +28,7 @@ export function seedTasks() {
       description: 'A "+" button and a click-to-edit modal with every task field.',
       type: 'feature',
       status: 'todo',
+      milestoneId: 'ms-example-mvp',
       assignee: TEAM[0],
       dueDate: daysFromToday(3),
       context: `## Background
@@ -47,6 +48,7 @@ Add the inline delete confirmation.`,
       description: 'Columns from STAGES; cards show the title and assignee.',
       type: 'feature',
       status: 'in-progress',
+      milestoneId: 'ms-example-mvp',
       assignee: TEAM[1],
       dueDate: daysFromToday(0),
     }),
@@ -73,6 +75,7 @@ Add brand + due tokens to tailwind.config.js, then replace the arbitrary values.
       description: 'Milestones 2 and 3.',
       type: 'feature',
       status: 'done',
+      milestoneId: 'ms-example-mvp',
       assignee: TEAM[0],
       dueDate: daysFromToday(-2), // past, but Done – shows the neutral state (M8)
     }),

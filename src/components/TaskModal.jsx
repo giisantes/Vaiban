@@ -5,6 +5,7 @@ import { typeStyle } from '../lib/typeStyles.js';
 import ContextSection from './ContextSection.jsx';
 import CopyContextButton from './CopyContextButton.jsx';
 import TaskDetails from './TaskDetails.jsx';
+import { useMilestones } from '../lib/milestones.js';
 import TypeBadge, { TypeIcon } from './TypeBadge.jsx';
 
 const inputClass =
@@ -53,6 +54,7 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose, toda
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [mode, setMode] = useState('view'); // 'view' | 'edit'
   const people = usePeople();
+  const milestones = useMilestones();
 
   // Load the task into the form each time the modal opens with a task.
   // Existing tasks open in view mode; new ones go straight to the form.
@@ -182,6 +184,15 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose, toda
                 {[...people, ...(form.assignee && !people.includes(form.assignee) ? [form.assignee] : [])].map((name) => (
                   <option key={name} value={name}>{name}</option>
                 ))}
+              </select>
+            </label>
+
+            {/* D79 / FR14: which milestone the task counts towards */}
+            <label className={labelClass}>
+              <span>Milestone (optional)</span>
+              <select id="task-milestone" value={form.milestoneId ?? ''} onChange={(e) => setForm({ ...form, milestoneId: e.target.value || null })} className={inputClass}>
+                <option value="">None</option>
+                {milestones.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
             </label>
 

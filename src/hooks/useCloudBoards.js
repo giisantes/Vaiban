@@ -170,6 +170,7 @@ export function useCloudBoards(user, onNotice) {
       if (project.name !== was.name) { changes.name = project.name; local.name = project.name; }
       if (project.description !== was.description) { changes.description = project.description; local.description = project.description; }
       if (!same(project.anchors, was.anchors)) { changes.anchors = project.anchors; local.anchors = project.anchors; }
+      if (!same(project.milestones ?? [], was.milestones ?? [])) { changes.milestones = project.milestones; local.milestones = project.milestones; } // D79
       if (Object.keys(changes).length) enqueue({ type: 'updateBoard', id: project.id, changes, local });
     }
     for (const project of removed) {

@@ -30,6 +30,7 @@ export function boardToProject(row, myId) {
     createdDate: (row.created_at ?? '').slice(0, 10),
     // always the four slots, filled in from whatever was saved
     anchors: defaultAnchors().map((a) => ({ ...a, url: saved.find((s) => s.id === a.id)?.url ?? null })),
+    milestones: Array.isArray(row.milestones) ? row.milestones : [], // D79
     ownerId: row.owner_id,
     ownerName: row.owner_name ?? '',
     isOwner: row.owner_id === myId,
@@ -107,8 +108,12 @@ export const api = {
 
   // ── Changing boards and tasks ──
 
-  createBoard: (project) =>
-    run(supabase.rpc('create_board', { p_id: project.id, p_name: project.name, p_description: project.description ?? '', p_anchors: project.anchors ?? [] })),
+  createBoard: async (project) => {
+    const row = await run(supabase.rpc('create_board', { p_id: project.id, p_name: project.name, p_description: project.description ?? '', p_anchors: project.anchors ?? [] }));
+    // D79: a board brought in from the browser (D74) may already have milestones
+    if (project.milestones?.length) await run(supabase.from('boards').update({ milestones: project.milestones }).eq('id', project.id));
+    return row;
+  },
   updateBoard: (id, changes) => run(supabase.from('boards').update(changes).eq('id', id)),
   deleteBoard: (id) => run(supabase.from('boards').delete().eq('id', id)),
   saveTasks: (tasks) => run(supabase.from('tasks').upsert(tasks.map(taskToRow), { onConflict: 'board_id,id' })),

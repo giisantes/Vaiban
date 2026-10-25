@@ -33,6 +33,7 @@ export function createProject(fields = {}) {
     description: '',
     createdDate: todayISO(),
     anchors: defaultAnchors(),
+    milestones: [], // D79
     ...fields,
   };
 }
@@ -58,6 +59,8 @@ export function seedProjects() {
       name: 'Vibecoding Project Tracker',
       description: 'The hackathon build – using the tracker to track itself.',
       anchors,
+      // D79: an example milestone, so the feature is visible on first visit
+      milestones: [{ id: 'ms-example-mvp', name: 'MVP for the pitch', dueDate: null }],
     }),
   ];
 }

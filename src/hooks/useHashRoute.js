@@ -5,14 +5,15 @@ import { useCallback, useEffect, useState } from 'react';
  * reload both keep you on the same screen – no routing library needed.
  *
  *   #/                 → home (all projects)
- *   #/project/<id>     → that project's board
+ *   #/project/<id>           → that project's board
+ *   #/project/<id>/settings  → its Settings tab (D76) – the tab is read from the hash by Workspace
  *
  * @returns {[string | null, (projectId: string | null) => void]}
  *          the open project's id (null = home), and a function to navigate
  */
 export function useHashRoute() {
   const read = () => {
-    const match = window.location.hash.match(/^#\/project\/(.+)$/);
+    const match = window.location.hash.match(/^#\/project\/([^/]+)(?:\/settings)?$/);
     return match ? decodeURIComponent(match[1]) : null;
   };
   const [projectId, setProjectId] = useState(read);
@@ -23,8 +24,8 @@ export function useHashRoute() {
     return () => window.removeEventListener('hashchange', onChange);
   }, []);
 
-  const navigate = useCallback((id) => {
-    window.location.hash = id ? `/project/${encodeURIComponent(id)}` : '/';
+  const navigate = useCallback((id, tab) => {
+    window.location.hash = id ? `/project/${encodeURIComponent(id)}${tab === 'settings' ? '/settings' : ''}` : '/';
   }, []);
 
   return [projectId, navigate];

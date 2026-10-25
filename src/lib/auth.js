@@ -73,6 +73,33 @@ export async function setNewPassword(password) {
   if (error) throw error;
 }
 
+/** Name and display name live on the account itself (D77). */
+export async function updateNames({ name, username }) {
+  const { error } = await supabase.auth.updateUser({ data: { name, username } });
+  if (error) throw error;
+}
+
+/**
+ * Supabase emails a confirmation link to the new address (and, with "secure
+ * email change" on, to the old one too); the email only changes once it's opened.
+ */
+export async function changeEmail(email) {
+  const { error } = await supabase.auth.updateUser({ email }, { emailRedirectTo: window.location.origin });
+  if (error) throw error;
+}
+
+/** Checks the current password first, so someone at an unlocked computer can't change it. */
+export async function checkCurrentPassword(email, password) {
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw new Error(/invalid login/i.test(error.message) ? "That isn't your current password." : friendlyError(error));
+}
+
+export async function changePassword(email, current, next) {
+  await checkCurrentPassword(email, current);
+  const { error } = await supabase.auth.updateUser({ password: next });
+  if (error) throw error;
+}
+
 export async function signOut() {
   await supabase.auth.signOut();
 }

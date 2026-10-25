@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { TEXT_SIZES, THEMES } from '../lib/settings.js';
 
 /** One group of choices, as real radio buttons styled as cards. */
-function Choice({ legend, name, options, value, onChange }) {
+export function Choice({ legend, name, options, value, onChange }) {
   return (
     <fieldset className="grid gap-2">
       <legend className="mb-1 text-sm font-semibold text-slate-900">{legend}</legend>
@@ -30,6 +30,16 @@ function Choice({ legend, name, options, value, onChange }) {
         })}
       </div>
     </fieldset>
+  );
+}
+
+/** Text size and theme choices – used in this window and on the account Settings page (D77). */
+export function DisplaySettings({ settings, onChange }) {
+  return (
+    <>
+      <Choice legend="Text size" name="text-size" options={TEXT_SIZES} value={settings.textSize} onChange={(textSize) => onChange({ textSize })} />
+      <Choice legend="Theme" name="theme" options={THEMES} value={settings.theme} onChange={(theme) => onChange({ theme })} />
+    </>
   );
 }
 

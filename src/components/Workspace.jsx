@@ -4,6 +4,7 @@ import { useCloudBoards } from '../hooks/useCloudBoards.js';
 import { useHash } from '../hooks/useHash.js';
 import { useHashRoute } from '../hooks/useHashRoute.js';
 import { useGuestSync } from '../hooks/useGuestSync.js';
+import { useProfiles } from '../hooks/useProfiles.js';
 import { useCloudLibrary, useLocalLibrary } from '../hooks/useLibrary.js';
 import { useStoredState } from '../hooks/useStoredState.js';
 import { useToday } from '../hooks/useToday.js';
@@ -13,6 +14,7 @@ import { displayName } from '../lib/auth.js';
 import { joinTokenFromHash, takeJoinToken } from '../lib/joinToken.js';
 import { LibraryContext, libraryHash, parseLibraryRoute } from '../lib/libraryRoute.js';
 import { PeopleContext } from '../lib/people.js';
+import { AvatarContext } from '../lib/profiles.js';
 import { createProject, seedProjects } from '../lib/projects.js';
 import { markGuestChanged } from '../lib/guest.js';
 import { seedTasks } from '../data/seedTasks.js';
@@ -26,6 +28,8 @@ import Toast from './Toast.jsx';
 import InvitationsPanel from './InvitationsPanel.jsx';
 import JoinBoard from './JoinBoard.jsx';
 import LibraryPage from './LibraryPage.jsx';
+import AccountSettingsPage from './AccountSettingsPage.jsx';
+import BoardSettingsPage from './BoardSettingsPage.jsx';
 import ShareDialog from './ShareDialog.jsx';
 
 /**
@@ -134,6 +138,10 @@ function WorkspaceView({ store, user, onSignOut, onSignIn, settings, onSettingsC
   const joinToken = isCloud ? joinTokenFromHash(hash) : null;
   // D69: the prompt and AI skills libraries live at #/library/…
   const libraryRoute = joinToken ? null : parseLibraryRoute(hash);
+  // D77: account settings at #/settings/<section>; D76: a board's Settings tab.
+  const settingsMatch = joinToken ? null : hash.match(/^#\/settings(?:\/([a-z]+))?$/);
+  const settingsSection = settingsMatch ? settingsMatch[1] || (user ? 'profile' : 'appearance') : null;
+  const boardTab = /^#\/project\/[^/]+\/settings$/.test(hash) ? 'settings' : 'board';
 
   // M9: tasks saved before the context fields existed get their defaults.
   const tasks = useMemo(() => data.tasks.map(withTaskDefaults), [data.tasks]);
@@ -147,6 +155,24 @@ function WorkspaceView({ store, user, onSignOut, onSignIn, settings, onSettingsC
     () => (isCloud ? boardMembers.filter((m) => m.status === 'active').map((m) => m.display_name).filter(Boolean) : TEAM),
     [isCloud, boardMembers]
   );
+
+  // D77: profiles (pictures, bios, links) of you and your teammates.
+  const memberKey = useMemo(() => data.members.filter((m) => m.status === 'active').map((m) => m.user_id).sort().join(), [data.members]);
+  const profile = useProfiles(isCloud ? user : null, memberKey);
+  const myName = user ? displayName(user) : '';
+  const avatars = useMemo(() => {
+    const map = new Map();
+    for (const m of data.members) {
+      const pic = profile.byId.get(m.user_id)?.avatar;
+      if (pic && m.display_name && !map.has(m.display_name)) map.set(m.display_name, pic);
+    }
+    if (myName && profile.mine.avatar) map.set(myName, profile.mine.avatar);
+    return map;
+  }, [data.members, profile.byId, profile.mine.avatar, myName]);
+  const goSettings = useCallback((section) => {
+    setEditing(null);
+    window.location.hash = `/settings/${section || (user ? 'profile' : 'appearance')}`;
+  }, [user]);
   const waitingCount = project?.isOwner ? boardMembers.filter((m) => m.status === 'pending').length : 0;
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -163,6 +189,13 @@ function WorkspaceView({ store, user, onSignOut, onSignIn, settings, onSettingsC
   const [toast, setToast] = useState(null);
   const [highlightId, setHighlightId] = useState(null);
   const clearToast = useCallback(() => setToast(null), []);
+  // A message left by the previous screen (e.g. "Your account has been deleted." – D77).
+  useEffect(() => {
+    try {
+      const notice = window.sessionStorage.getItem('vaiban.notice');
+      if (notice) { window.sessionStorage.removeItem('vaiban.notice'); setToast({ message: notice }); }
+    } catch { /* ignore */ }
+  }, []);
   if (notify) notify.current = (message) => setToast({ message });
 
   // M8 due-tint: today's date, updated automatically so colours move on by themselves.
@@ -265,9 +298,10 @@ function WorkspaceView({ store, user, onSignOut, onSignIn, settings, onSettingsC
   // Each screen has its own page title, so screen-reader users and browser
   // tabs say where you are (WCAG 2.2 SC 2.4.2 Page Titled).
   useEffect(() => {
-    if (joinToken || libraryRoute) return; // the join and library screens set their own
+    if (joinToken || libraryRoute || settingsSection) return; // these screens set their own
+    if (project && boardTab === 'settings') { document.title = `Settings – ${project.name} – Vaiban`; return; }
     document.title = project ? `${project.name} – Vaiban` : 'Your projects – Vaiban';
-  }, [project, joinToken, libraryRoute]);
+  }, [project, joinToken, libraryRoute, settingsSection, boardTab]);
 
   // ── D69–D71: prompt library and AI skills library ──
   // Only items in your private library or on a board you're still on (the
@@ -318,7 +352,8 @@ function WorkspaceView({ store, user, onSignOut, onSignIn, settings, onSettingsC
     setToast({ message: `Created "${created.name}". Add its first task with + Task.` });
   };
 
-  // D62: board details and membership (Share window).
+  // D76: board details on the board's Settings tab – D62: membership (Share window).
+  const canEditBoard = Boolean(project) && (!isCloud || project.isOwner);
   const renameBoard = (fields) => setProjects((prev) => prev.map((p) => (p.id === project.id ? { ...p, ...fields } : p)));
   const deleteBoard = () => {
     const name = project.name;
@@ -380,6 +415,7 @@ function WorkspaceView({ store, user, onSignOut, onSignIn, settings, onSettingsC
   return (
     <LibraryContext.Provider value={libraryValue}>
     <PeopleContext.Provider value={people}>
+    <AvatarContext.Provider value={avatars}>
     <div className="flex min-h-screen flex-col p-4 sm:p-6">
       {/* flex column + flex-1 on <main>: on short pages the footer sits at the
           bottom of the window instead of straight under the board. */}
@@ -399,8 +435,8 @@ function WorkspaceView({ store, user, onSignOut, onSignIn, settings, onSettingsC
         onSignIn={onSignIn}
         saveStatus={saveStatus}
         isCloud={isCloud}
-        settings={settings}
-        onSettingsChange={onSettingsChange}
+        onSettings={() => goSettings()}
+        avatar={profile.mine.avatar}
         onShare={isCloud && project ? () => setShareOpen(true) : undefined}
         waitingCount={waitingCount}
         onLibrary={() => goLibrary({ kind: 'prompt' })}
@@ -420,6 +456,18 @@ function WorkspaceView({ store, user, onSignOut, onSignIn, settings, onSettingsC
           onJoined={(message) => setToast({ message })}
           onSignOut={onSignOut}
         />
+      ) : settingsSection ? (
+        <AccountSettingsPage
+          user={isCloud ? user : null}
+          section={settingsSection}
+          go={(section) => window.location.replace(`#/settings/${section}`)}
+          settings={settings}
+          onSettingsChange={onSettingsChange}
+          profile={profile}
+          ownedBoards={isCloud ? projects.filter((p) => p.isOwner) : []}
+          onSignIn={onSignIn}
+          onBack={() => navigate(null)}
+        />
       ) : libraryRoute ? (
         <LibraryPage
           route={libraryRoute}
@@ -437,6 +485,44 @@ function WorkspaceView({ store, user, onSignOut, onSignIn, settings, onSettingsC
         />
       ) : project ? (
         <>
+          {/* D76: Board and Settings tabs, like a GitHub repository's */}
+          <nav aria-label="Board pages" className="-mt-1 mb-4 border-b border-slate-200">
+            <ul className="flex gap-1">
+              {[
+                { tab: 'board', label: 'Board', icon: <><rect x="3" y="4" width="5" height="16" rx="1" /><rect x="10" y="4" width="5" height="11" rx="1" /><rect x="17" y="4" width="4" height="7" rx="1" /></> },
+                { tab: 'settings', label: 'Settings', icon: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" /></> },
+              ].map(({ tab, label, icon }) => (
+                <li key={tab}>
+                  <a
+                    href={`#/project/${encodeURIComponent(project.id)}${tab === 'settings' ? '/settings' : ''}`}
+                    onClick={(e) => { e.preventDefault(); navigate(project.id, tab); }}
+                    aria-current={boardTab === tab ? 'page' : undefined}
+                    className={`-mb-px inline-flex min-h-[36px] items-center gap-1.5 border-b-2 px-3 py-1.5 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${
+                      boardTab === tab ? 'border-brand-primary text-slate-900' : 'border-transparent text-slate-600 hover:border-slate-300 hover:text-slate-900'
+                    }`}
+                  >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
+                    {label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          {boardTab === 'settings' ? (
+            <BoardSettingsPage
+              key={project.id}
+              project={project}
+              canEdit={canEditBoard}
+              isCloud={isCloud}
+              taskCount={tasks.filter((t) => t.projectId === project.id).length}
+              memberCount={isCloud ? boardMembers.filter((m) => m.status === 'active').length : 1}
+              onSave={renameBoard}
+              onDelete={deleteBoard}
+              onLeave={leaveBoard}
+              onShare={() => setShareOpen(true)}
+            />
+          ) : (
+          <>
           <AnchorBoard key={project.id} anchors={project.anchors} onSave={saveAnchor} />
           <h2 id="board" tabIndex={-1} className="sr-only">Board</h2>
           <Board
@@ -448,6 +534,8 @@ function WorkspaceView({ store, user, onSignOut, onSignIn, settings, onSettingsC
             today={today}
             onCopied={contextCopied}
           />
+          </>
+          )}
         </>
       ) : (
         <ProjectsHome projects={projects} tasks={tasks} members={data.members} today={today} onOpen={navigate} onCreate={addProject}>
@@ -507,13 +595,13 @@ function WorkspaceView({ store, user, onSignOut, onSignIn, settings, onSettingsC
           project={project}
           members={boardMembers}
           sharing={sharing}
-          onRename={renameBoard}
-          onDelete={deleteBoard}
           onLeave={leaveBoard}
+          profiles={profile.byId}
         />
       )}
       <Toast toast={toast} onDone={clearToast} />
     </div>
+    </AvatarContext.Provider>
     </PeopleContext.Provider>
     </LibraryContext.Provider>
   );

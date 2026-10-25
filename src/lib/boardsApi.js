@@ -143,6 +143,20 @@ export const api = {
   removeMember: (boardId, userId) => run(supabase.rpc('remove_member', { p_board: boardId, p_user: userId })),
   refreshMyName: () => run(supabase.rpc('refresh_my_name')),
 
+  // ── Profiles and account (D77) ──
+
+  /** Profiles this user may see (their own + teammates on active boards). */
+  loadProfiles: async () => run(supabase.from('profiles').select('id, bio, link, avatar, updated_at')),
+  saveProfile: (userId, { bio, link, avatar }) => run(supabase.from('profiles').upsert({ id: userId, bio, link, avatar }, { onConflict: 'id' })),
+  renameMyTasks: (oldName) => run(supabase.rpc('rename_my_tasks', { p_old: oldName })),
+  deleteMyAccount: () => run(supabase.rpc('delete_my_account')),
+  subscribeProfiles(userId, onChange) {
+    const channel = supabase.channel(`vaiban-profiles-${userId}`);
+    channel.on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => onChange());
+    channel.subscribe();
+    return () => supabase.removeChannel(channel);
+  },
+
   // ── Prompt library and AI skills library (D69–D71) ──
 
   /** Every prompt or skill this user may see: their private ones + their boards' ones. */

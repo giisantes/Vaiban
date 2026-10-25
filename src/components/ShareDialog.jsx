@@ -3,13 +3,13 @@ import { joinLink, sharingError } from '../lib/boardsApi.js';
 import { copyText } from '../lib/clipboard.js';
 import { relativeTime } from '../lib/relativeTime.js';
 import Avatar from './Avatar.jsx';
+import ConfirmButton from './ConfirmButton.jsx';
+import { shortLink } from '../lib/profiles.js';
 
 const button =
   'inline-flex min-h-[32px] items-center justify-center rounded-md border border-slate-300 bg-surface px-3 py-1 text-sm font-medium text-slate-800 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-50';
 const primary =
   'inline-flex min-h-[32px] items-center justify-center rounded-md bg-brand-primary px-3 py-1 text-sm font-medium text-white hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 disabled:opacity-50';
-const danger =
-  'inline-flex min-h-[32px] items-center justify-center rounded-md bg-due-overdue px-3 py-1 text-sm font-medium text-due-overdue-on hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 disabled:opacity-50';
 const input =
   'w-full min-w-0 rounded-md border border-slate-300 bg-surface px-2.5 py-1.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-primary';
 const section = 'grid gap-3 border-t border-slate-200 pt-4';
@@ -17,29 +17,13 @@ const h3 = 'text-base font-semibold text-slate-900';
 
 const dateText = (iso) => new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 
-/** "Remove" that asks once more before doing it (no browser pop-ups – D17). */
-function ConfirmButton({ label, confirmLabel, question, onConfirm, className = button, describedBy }) {
-  const [asking, setAsking] = useState(false);
-  const yes = useRef(null);
-  useEffect(() => { if (asking) yes.current?.focus(); }, [asking]);
-  if (!asking) {
-    return <button type="button" className={className} aria-describedby={describedBy} onClick={() => setAsking(true)}>{label}</button>;
-  }
-  return (
-    <span role="group" aria-label={question} className="flex flex-wrap items-center gap-2">
-      <span className="text-sm text-slate-700">{question}</span>
-      <button ref={yes} type="button" className={danger} onClick={() => { setAsking(false); onConfirm(); }}>{confirmLabel}</button>
-      <button type="button" className={button} onClick={() => setAsking(false)}>Cancel</button>
-    </span>
-  );
-}
-
 /**
  * Share window for a board (D62–D64). What you see depends on your role:
  *
  *   Owner  – people waiting to join (Let in / Decline), invite by email,
- *            the invite link, the member list with Remove, rename / delete.
+ *            the invite link, the member list with Remove.
  *   Member – the member list and "Leave board".
+ * Renaming and deleting the board are on its Settings tab (BoardSettingsPage, D76).
  *
  * Built on the native <dialog>, like the task and Settings windows (D17):
  * focus stays inside, Escape closes it, focus returns to the Share button.
@@ -49,11 +33,11 @@ function ConfirmButton({ label, confirmLabel, question, onConfirm, className = b
  * @param {{
  *   open: boolean, onClose: () => void,
  *   project: object, members: object[], sharing: object,
- *   onRename: (fields: { name: string, description: string }) => void,
- *   onDelete: () => void, onLeave: () => void,
+ *   onLeave: () => void,
+ *   profiles?: Map<string, { bio: string, link: string }>,  // D77: shown under each member
  * }} props
  */
-export default function ShareDialog({ open, onClose, project, members, sharing, onRename, onDelete, onLeave }) {
+export default function ShareDialog({ open, onClose, project, members, sharing, onLeave, profiles = new Map() }) {
   const ref = useRef(null);
   const isOwner = project.isOwner;
   const [invites, setInvites] = useState([]);
@@ -63,8 +47,6 @@ export default function ShareDialog({ open, onClose, project, members, sharing, 
   const [email, setEmail] = useState('');
   const [lastEmailInvite, setLastEmailInvite] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [name, setName] = useState(project.name);
-  const [description, setDescription] = useState(project.description);
 
   useEffect(() => {
     const dialog = ref.current;
@@ -90,8 +72,6 @@ export default function ShareDialog({ open, onClose, project, members, sharing, 
     setError('');
     setAnnounce('');
     setLastEmailInvite(null);
-    setName(project.name);
-    setDescription(project.description);
     refresh();
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -215,7 +195,7 @@ export default function ShareDialog({ open, onClose, project, members, sharing, 
                       </span>
                     </span>
                     <span className="flex gap-2">
-                      <button type="button" disabled={busy} className={primary} aria-label={`Let ${m.display_name} in`}
+                      <button type="button" disabled={busy} className={primary} aria-label={`Let in ${m.display_name}`}
                         onClick={() => act(() => sharing.approve(project.id, m.user_id), `${m.display_name} can now see this board.`)}>
                         Let in
                       </button>
@@ -324,15 +304,22 @@ export default function ShareDialog({ open, onClose, project, members, sharing, 
             <ul className="grid gap-2">
               {active.map((m) => {
                 const me = m.user_id === sharing.myId;
+                const p = profiles.get(m.user_id);
                 return (
                   <li key={m.user_id} className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                    <Avatar name={m.display_name} size="sm" />
+                    <Avatar name={m.display_name} />
                     <span className="grid min-w-0 flex-1">
                       <span className="text-sm font-medium [overflow-wrap:anywhere]">
                         {m.display_name || 'Unnamed'}{me && ' (you)'}
                         {m.role === 'owner' && <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-semibold text-slate-700">Owner</span>}
                       </span>
                       {isOwner && emails[m.user_id] && <span className="text-xs text-slate-600 [overflow-wrap:anywhere]">{emails[m.user_id]}</span>}
+                      {p?.bio && <span className="text-xs text-slate-700 [overflow-wrap:anywhere]">{p.bio}</span>}
+                      {p?.link && (
+                        <a href={p.link} target="_blank" rel="noopener noreferrer nofollow" className="justify-self-start rounded text-xs text-link underline underline-offset-2 hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary [overflow-wrap:anywhere]">
+                          {shortLink(p.link)}<span className="sr-only"> (opens in a new tab)</span>
+                        </a>
+                      )}
                     </span>
                     {isOwner && !me && (
                       <ConfirmButton label="Remove" confirmLabel="Remove" question={`Remove ${m.display_name}?`}
@@ -345,35 +332,7 @@ export default function ShareDialog({ open, onClose, project, members, sharing, 
             {active.length === 1 && isOwner && <p className="text-sm text-slate-600">Just you so far.</p>}
           </section>
 
-          {isOwner ? (
-            <section aria-labelledby="share-board" className={section}>
-              <h3 id="share-board" className={h3}>Board details</h3>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!name.trim()) { setError('Give the board a name.'); return; }
-                  onRename({ name: name.trim(), description: description.trim() });
-                  setAnnounce('Board details saved.');
-                }}
-                className="grid gap-2 sm:grid-cols-[1fr_2fr_auto] sm:items-end"
-              >
-                <label className="grid gap-1 text-sm font-medium text-slate-700">
-                  <span>Name</span>
-                  <input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} className={input} />
-                </label>
-                <label className="grid gap-1 text-sm font-medium text-slate-700">
-                  <span>Description</span>
-                  <input value={description} onChange={(e) => setDescription(e.target.value)} maxLength={500} className={input} />
-                </label>
-                <button type="submit" className={button}>Save</button>
-              </form>
-              <div className="flex flex-wrap items-center gap-2">
-                <ConfirmButton label="Delete board" confirmLabel="Delete for everyone" className={button}
-                  question={`Delete “${project.name}” and all its tasks for all ${active.length} ${active.length === 1 ? 'member' : 'members'}? This can't be undone.`}
-                  onConfirm={onDelete} />
-              </div>
-            </section>
-          ) : (
+          {!isOwner && (
             <section aria-labelledby="share-leave" className={section}>
               <h3 id="share-leave" className={h3}>Leave this board</h3>
               <p className="text-sm text-slate-600">You'll stop seeing it. You'd need a new invitation to come back.</p>

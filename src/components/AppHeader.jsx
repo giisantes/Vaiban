@@ -1,6 +1,5 @@
 import { displayName } from '../lib/auth.js';
-import Avatar from './Avatar.jsx';
-import SettingsButton from './SettingsButton.jsx';
+import UserMenu from './UserMenu.jsx';
 
 const SAVE_TEXT = {
   saving: 'Saving…',
@@ -23,7 +22,8 @@ const SAVE_TEXT = {
  *   onSignIn?: (mode: 'signin' | 'signup') => void, // signed out, accounts available (D74)
  *   saveStatus?: 'saving' | 'saved' | 'error',
  *   isCloud?: boolean,
- *   settings: object, onSettingsChange: (changes: object) => void,  // D60
+ *   onSettings: () => void,      // D77: opens the Settings page (account, or Appearance without one)
+ *   avatar?: string,             // D77: your profile picture
  *   onShare?: () => void,        // D62: opens the Share window (cloud boards only)
  *   waitingCount?: number,       // people waiting for the owner to let them in
  *   onLibrary?: () => void, libraryActive?: boolean,          // D69: the prompt / AI skills libraries
@@ -33,7 +33,7 @@ const SAVE_TEXT = {
  * Accounts: shows who is signed in, a Sign out button, and whether the
  * latest change has reached the server ("All changes saved").
  */
-export default function AppHeader({ project, onHome, onNewTask, user, onSignOut, onSignIn, saveStatus = 'saved', isCloud, settings, onSettingsChange, onShare, waitingCount = 0, onLibrary, libraryActive = false, onBoardPrompts, boardPromptCount = 0 }) {
+export default function AppHeader({ project, onHome, onNewTask, user, onSignOut, onSignIn, saveStatus = 'saved', isCloud, onSettings, avatar, onShare, waitingCount = 0, onLibrary, libraryActive = false, onBoardPrompts, boardPromptCount = 0 }) {
   const name = displayName(user);
   return (
     <header className="mb-4 flex flex-wrap items-center justify-between gap-4">
@@ -95,7 +95,19 @@ export default function AppHeader({ project, onHome, onNewTask, user, onSignOut,
           </a>
         )}
 
-        <SettingsButton settings={settings} onChange={onSettingsChange} />
+        {!user && (
+          <a
+            href="#/settings/appearance"
+            onClick={(e) => { e.preventDefault(); onSettings(); }}
+            className="inline-flex min-h-[28px] items-center gap-1.5 rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+            </svg>
+            Settings
+          </a>
+        )}
 
         {!user && onSignIn && (
           <div className="flex items-center gap-2 border-l border-slate-300 pl-3">
@@ -110,19 +122,7 @@ export default function AppHeader({ project, onHome, onNewTask, user, onSignOut,
         )}
 
         {user && (
-          <div className="flex items-center gap-2 border-l border-slate-300 pl-3">
-            <Avatar name={name} size="sm" />
-            <span className="max-w-[12rem] truncate text-sm font-medium text-slate-800" title={user.email}>{name}</span>
-            <button
-              type="button"
-              onClick={onSignOut}
-              disabled={saveStatus !== 'saved'}
-              title={saveStatus !== 'saved' ? 'Wait until your changes are saved' : undefined}
-              className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-50"
-            >
-              Sign out
-            </button>
-          </div>
+          <UserMenu user={user} name={name} avatar={avatar} onSettings={onSettings} onSignOut={onSignOut} canSignOut={saveStatus === 'saved'} />
         )}
 
       {onBoardPrompts && (

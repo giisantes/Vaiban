@@ -22,7 +22,7 @@ import TaskCard from './TaskCard.jsx';
  *   onDrop: (id: string) => void,
  * }} props
  */
-export default function Column({ stage, tasks, onOpenTask, onHandOff, onMoveTask, highlightId, today, onCopied, dragging, onDragStart, onDragEnd, onDrop }) {
+export default function Column({ stage, totalCount, tasks, onOpenTask, onHandOff, onMoveTask, highlightId, today, onCopied, dragging, onDragStart, onDragEnd, onDrop }) {
   const headingId = `column-${stage.id}`;
   const [over, setOver] = useState(false);
   const canDrop = Boolean(dragging) && dragging.status !== stage.id;
@@ -61,15 +61,25 @@ export default function Column({ stage, tasks, onOpenTask, onHandOff, onMoveTask
         <h2 id={headingId} className="text-base font-semibold uppercase text-slate-800">
           {stage.label}
         </h2>
+        {/* D80: while a filter is on, "1 of 3" – so hidden tasks aren't mistaken for missing ones */}
         <span className="text-xs text-slate-600">
-          {tasks.length}
-          <span className="sr-only"> {tasks.length === 1 ? 'task' : 'tasks'}</span>
+          {totalCount === undefined ? (
+            <>
+              {tasks.length}
+              <span className="sr-only"> {tasks.length === 1 ? 'task' : 'tasks'}</span>
+            </>
+          ) : (
+            <>
+              {tasks.length} of {totalCount}
+              <span className="sr-only"> {totalCount === 1 ? 'task' : 'tasks'} shown</span>
+            </>
+          )}
         </span>
       </div>
 
       {tasks.length === 0 ? (
         <p className="rounded-md border border-dashed border-slate-300 p-3 text-sm text-slate-600">
-          Nothing here yet.
+          {totalCount ? `None match the filters (${totalCount} hidden).` : 'Nothing here yet.'}
         </p>
       ) : (
         <ul className="flex flex-col gap-2">

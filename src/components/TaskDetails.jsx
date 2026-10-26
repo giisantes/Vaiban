@@ -64,6 +64,11 @@ export default function TaskDetails({ task, today, onEdit, onClose }) {
                 <span className="sr-only">Milestone: </span>{milestone.name}
               </span>
             )}
+            {(task.tags ?? []).map((tag) => (
+              <span key={tag} className="inline-flex items-center rounded border border-slate-300 px-1.5 py-0.5 text-xs text-slate-700">
+                <span className="sr-only">Tag: </span>#{tag}
+              </span>
+            ))}
           </span>
           <h2 id="task-modal-title" className="text-xl font-semibold text-slate-900 [overflow-wrap:anywhere]">
             {task.title}

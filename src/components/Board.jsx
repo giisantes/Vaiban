@@ -17,9 +17,10 @@ import Column from './Column.jsx';
  *   highlightId: string | null,
  *   today: string,
  *   onCopied: (ok: boolean) => void,
+ *   allTasks?: import('../lib/createTask.js').Task[],  // D80: the whole board, when a filter is on
  * }} props
  */
-export default function Board({ tasks, onOpenTask, onHandOff, onMoveTask, highlightId, today, onCopied }) {
+export default function Board({ tasks, onOpenTask, onHandOff, onMoveTask, highlightId, today, onCopied, allTasks }) {
   const [dragging, setDragging] = useState(null); // the task being dragged, or null
 
   return (
@@ -31,6 +32,7 @@ export default function Board({ tasks, onOpenTask, onHandOff, onMoveTask, highli
           key={stage.id}
           stage={stage}
           tasks={tasks.filter((task) => task.status === stage.id).sort(byOrder)}
+          totalCount={allTasks ? allTasks.filter((task) => task.status === stage.id).length : undefined}
           onOpenTask={onOpenTask}
           onHandOff={onHandOff}
           onMoveTask={onMoveTask}

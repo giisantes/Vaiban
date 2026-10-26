@@ -67,7 +67,7 @@ export default function TaskCard({ task, onOpen, onHandOff, onMove, justHandedOf
         <TypeBadge type={task.type} />
       </div>
 
-      {(due.state !== 'none' || promptCount > 0 || milestone) && (
+      {(due.state !== 'none' || promptCount > 0 || milestone || task.tags?.length > 0) && (
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {milestone && (
             <span className="inline-flex max-w-full items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-800 [overflow-wrap:anywhere]">
@@ -76,6 +76,13 @@ export default function TaskCard({ task, onOpen, onHandOff, onMove, justHandedOf
             </span>
           )}
           {due.state !== 'none' && <DueChip due={due} />}
+          {/* D80: tags – the first three, then "+2 more" so cards stay short */}
+          {(task.tags ?? []).slice(0, 3).map((tag) => (
+            <span key={tag} className="inline-flex max-w-full items-center rounded border border-slate-300 px-1.5 py-0.5 text-xs text-slate-700 [overflow-wrap:anywhere]">
+              <span className="sr-only">Tag: </span>#{tag}
+            </span>
+          ))}
+          {task.tags?.length > 3 && <span className="text-xs text-slate-600">+{task.tags.length - 3} more<span className="sr-only"> tags</span></span>}
           {promptCount > 0 && (
             <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-700">
               <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

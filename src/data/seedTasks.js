@@ -29,6 +29,7 @@ export function seedTasks() {
       type: 'feature',
       status: 'todo',
       milestoneId: 'ms-example-mvp',
+      tags: ['UI'],
       assignee: TEAM[0],
       dueDate: daysFromToday(3),
       context: `## Background
@@ -57,6 +58,7 @@ Add the inline delete confirmation.`,
       description: 'The DESIGN.md colours are not in tailwind.config.js yet.',
       type: 'bug',
       status: 'review',
+      tags: ['UI', 'Styling'],
       assignee: TEAM[2],
       dueDate: daysFromToday(-1),
       context: `## Background

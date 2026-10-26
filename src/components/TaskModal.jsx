@@ -6,6 +6,8 @@ import ContextSection from './ContextSection.jsx';
 import CopyContextButton from './CopyContextButton.jsx';
 import TaskDetails from './TaskDetails.jsx';
 import { useMilestones } from '../lib/milestones.js';
+import { useBoardTags } from '../lib/taskFilters.js';
+import TagPicker from './TagPicker.jsx';
 import TypeBadge, { TypeIcon } from './TypeBadge.jsx';
 
 const inputClass =
@@ -55,6 +57,7 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose, toda
   const [mode, setMode] = useState('view'); // 'view' | 'edit'
   const people = usePeople();
   const milestones = useMilestones();
+  const boardTagList = useBoardTags();
 
   // Load the task into the form each time the modal opens with a task.
   // Existing tasks open in view mode; new ones go straight to the form.
@@ -97,6 +100,7 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose, toda
     const contextChanged = form.context !== task.context || form.contextTool !== task.contextTool;
     onSave({
       ...form,
+      tags: form.tags ?? [],
       title,
       dueDate: form.dueDate || null,
       contextUpdatedAt: contextChanged ? new Date().toISOString() : form.contextUpdatedAt,
@@ -201,6 +205,9 @@ export default function TaskModal({ task, isNew, onSave, onDelete, onClose, toda
               <input id="task-due" type="date" value={form.dueDate || ''} onChange={set('dueDate')} className={inputClass} />
             </label>
           </div>
+
+          {/* D81 / FR15: pick the board's tags, or create a new one */}
+          <TagPicker value={form.tags ?? []} onChange={(tags) => setForm({ ...form, tags })} boardTags={boardTagList} />
 
           <label className={labelClass}>
             <span>Description</span>

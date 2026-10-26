@@ -16,11 +16,13 @@ import { LibraryContext, libraryHash, parseLibraryRoute } from '../lib/libraryRo
 import { PeopleContext } from '../lib/people.js';
 import { AvatarContext } from '../lib/profiles.js';
 import { MilestonesContext } from '../lib/milestones.js';
+import { BoardTagsContext, NONE, NO_FILTERS, applyFilters, boardTags, isFiltering } from '../lib/taskFilters.js';
 import { createProject, seedProjects } from '../lib/projects.js';
 import { markGuestChanged } from '../lib/guest.js';
 import { seedTasks } from '../data/seedTasks.js';
 import AnchorBoard from './AnchorBoard.jsx';
 import MilestoneStrip from './MilestoneStrip.jsx';
+import FilterBar from './FilterBar.jsx';
 import AppHeader from './AppHeader.jsx';
 import FullPageMessage from './FullPageMessage.jsx';
 import Board from './Board.jsx';
@@ -210,13 +212,28 @@ function WorkspaceView({ store, user, onSignOut, onSignIn, settings, onSettingsC
   }, [highlightId]);
 
   // M9: new tasks start with the Context template (Background / Constraints / …).
-  // D79: "Show only these tasks" for one milestone (per board, cleared when you switch board).
-  const [milestoneFilter, setMilestoneFilter] = useState(null);
+  // D79–D80: filters for the open board (cleared when you switch board).
+  const [filters, setFilters] = useState(NO_FILTERS);
   const milestones = useMemo(() => project?.milestones ?? [], [project]);
-  const activeFilter = milestones.some((m) => m.id === milestoneFilter) ? milestoneFilter : null;
-  useEffect(() => { setMilestoneFilter(null); }, [projectId]);
-  // A new task made while filtering starts in that milestone.
-  const openNewTask = () => setEditing(createTask({ projectId: project.id, context: CONTEXT_TEMPLATE, milestoneId: activeFilter }));
+  useEffect(() => { setFilters(NO_FILTERS); }, [projectId]);
+  const activeFilter = filters.milestone && filters.milestone !== NONE ? filters.milestone : null;
+  const setMilestoneFilter = (id) => setFilters((f) => ({ ...f, milestone: id ?? '' }));
+  const boardTasks = useMemo(() => (project ? tasks.filter((t) => t.projectId === project.id) : []), [tasks, project]);
+  const shownTasks = useMemo(() => applyFilters(boardTasks, filters, today), [boardTasks, filters, today]);
+  const tagsOnBoard = useMemo(() => boardTags(boardTasks), [boardTasks]);
+  const filterPeople = useMemo(
+    () => [...new Set([...people, ...boardTasks.map((t) => t.assignee).filter(Boolean)])],
+    [people, boardTasks]
+  );
+  // A new task made while filtering starts in that milestone, with that tag and owner, so it stays in view.
+  const openNewTask = () =>
+    setEditing(createTask({
+      projectId: project.id,
+      context: CONTEXT_TEMPLATE,
+      milestoneId: activeFilter,
+      tags: filters.tag ? [filters.tag] : [],
+      assignee: filters.assignee && filters.assignee !== NONE ? filters.assignee : '',
+    }));
   const openTask = (id) => setEditing(tasks.find((t) => t.id === id) ?? null);
   const closeModal = () => setEditing(null);
 
@@ -434,6 +451,7 @@ function WorkspaceView({ store, user, onSignOut, onSignIn, settings, onSettingsC
     <PeopleContext.Provider value={people}>
     <AvatarContext.Provider value={avatars}>
     <MilestonesContext.Provider value={milestones}>
+    <BoardTagsContext.Provider value={tagsOnBoard}>
     <div className="flex min-h-screen flex-col p-4 sm:p-6">
       {/* flex column + flex-1 on <main>: on short pages the footer sits at the
           bottom of the window instead of straight under the board. */}
@@ -545,7 +563,7 @@ function WorkspaceView({ store, user, onSignOut, onSignIn, settings, onSettingsC
           <MilestoneStrip
             key={`ms-${project.id}`}
             milestones={milestones}
-            tasks={tasks.filter((t) => t.projectId === project.id)}
+            tasks={boardTasks}
             today={today}
             filterId={activeFilter}
             onFilter={setMilestoneFilter}
@@ -553,18 +571,19 @@ function WorkspaceView({ store, user, onSignOut, onSignIn, settings, onSettingsC
             onDeleted={milestoneDeleted}
           />
           <h2 id="board" tabIndex={-1} className="sr-only">Board</h2>
-          <p role="status" className={activeFilter ? 'mb-3 flex flex-wrap items-center gap-2 rounded-md bg-highlight px-3 py-2 text-sm text-slate-900' : 'sr-only'}>
-            {activeFilter && (
-              <>
-                <span>Showing only tasks in <strong>{milestones.find((m) => m.id === activeFilter)?.name}</strong>.</span>
-                <button type="button" onClick={() => setMilestoneFilter(null)} className="inline-flex min-h-[28px] items-center rounded-md border border-slate-300 bg-surface px-2.5 py-1 text-xs font-medium text-slate-800 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">
-                  Show all tasks
-                </button>
-              </>
-            )}
-          </p>
+          <FilterBar
+            filters={filters}
+            onChange={setFilters}
+            people={filterPeople}
+            me={isCloud ? myName : undefined}
+            milestones={milestones}
+            tags={tagsOnBoard}
+            shown={shownTasks.length}
+            total={boardTasks.length}
+          />
           <Board
-            tasks={tasks.filter((t) => t.projectId === project.id && (!activeFilter || t.milestoneId === activeFilter))}
+            tasks={shownTasks}
+            allTasks={isFiltering(filters) ? boardTasks : undefined}
             onOpenTask={openTask}
             onHandOff={handOff}
             onMoveTask={moveTask}
@@ -639,6 +658,7 @@ function WorkspaceView({ store, user, onSignOut, onSignIn, settings, onSettingsC
       )}
       <Toast toast={toast} onDone={clearToast} />
     </div>
+    </BoardTagsContext.Provider>
     </MilestonesContext.Provider>
     </AvatarContext.Provider>
     </PeopleContext.Provider>
